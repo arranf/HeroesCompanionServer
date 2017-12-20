@@ -52,6 +52,7 @@ function fetch() {
         }
         let start = chrono.parseDate(matches[1])
         let end = chrono.parseDate(matches[2])
+        data['time'] = new Date.toISOString() 
         data['start'] = start
         data['end'] = end
         data['heroes'].forEach((hero) => {
@@ -59,8 +60,10 @@ function fetch() {
           hero['title'] = titleCase(hero['title'])
         })
         fs.writeFile('data.json', JSON.stringify(data), (err) => {  
-          // throws an error, you could also catch it here
-          if (err) throw err;
+          // throws an error, caught outside
+          if (err) {
+            throw err; 
+          }
       
           // success case, the file was saved
           console.log(`Data Saved ${new Date()}`);
