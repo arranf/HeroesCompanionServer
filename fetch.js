@@ -43,6 +43,7 @@ function fetch() {
         return {'heroes': heroes, 'duration': duration}
       })
       .end()
+      .catch((error) => console.error(error))
       .then((data) => {
         let duration = data['duration']
         let matches = regex.exec(data['duration'])
@@ -65,6 +66,7 @@ function fetch() {
           console.log(`Data Saved ${new Date()}`);
       })
     })
+    .catch((error) => console.error(error))
 }
 
 module.exports = fetch
