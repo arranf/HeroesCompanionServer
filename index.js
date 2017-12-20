@@ -5,10 +5,11 @@ var cron = require('node-cron');
 
 var fetch = require('./fetch');
  
+fetch()
 cron.schedule('15,45 * * * *', function(){
   console.log('Cron Running')
-  fetch();
-}, true);
+  fetch()
+}, true)
 
 
 function readData() {
@@ -36,4 +37,4 @@ app.get('/', function (req, res) {
 
 var port = process.env.PORT || 8080;
 
-app.listen(port, () => console.log(`Example app listening on port ${port}`))
+app.listen(port, () => console.log(`Listening on port ${port}`))

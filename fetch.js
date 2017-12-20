@@ -21,12 +21,12 @@ function fetch() {
           item = {}
           var name = el.find('.hero-list__item__name')[0]
           if (name){
-            item.name = titleCase(name.innerText)
+            item.name = name.innerText
           }
 
           var title = el.find('.hero-list__item__title')[0]
           if (title) {
-            item.title = titleCase(title.innerText)
+            item.title = title.innerText
           }
 
           var isFreeToPlay = $(el).find('.hero-list__item__free-flag')
@@ -53,6 +53,10 @@ function fetch() {
         let end = chrono.parseDate(matches[2])
         data['start'] = start
         data['end'] = end
+        data['heroes'].forEach((hero) => {
+          hero['name'] = titleCase(hero['name'])
+          hero['title'] = titleCase(hero['title'])
+        })
         fs.writeFile('data.json', JSON.stringify(data), (err) => {  
           // throws an error, you could also catch it here
           if (err) throw err;
