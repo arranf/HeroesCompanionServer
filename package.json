@@ -13,8 +13,7 @@
     "jquery": "^3.2.1",
     "nightmare": "^2.10.0",
     "node-cron": "^1.2.1",
-    "osmosis": "^1.1.5",
-    "scraperjs": "^1.2.0",
-    "title-case": "^2.1.1"
+    "title-case": "^2.1.1",
+    "electron": "^1.6.10"
   }
 }
