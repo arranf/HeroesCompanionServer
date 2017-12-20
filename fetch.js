@@ -52,7 +52,7 @@ function fetch() {
         }
         let start = chrono.parseDate(matches[1])
         let end = chrono.parseDate(matches[2])
-        data['time'] = new Date.toISOString() 
+        data['time'] = new Date().toISOString()  
         data['start'] = start
         data['end'] = end
         data['heroes'].forEach((hero) => {
