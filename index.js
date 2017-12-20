@@ -34,4 +34,6 @@ app.get('/', function (req, res) {
 })
 
 
-app.listen(3000, () => console.log('Example app listening on port 3000!'))
+var port = process.env.PORT || 8080;
+
+app.listen(port, () => console.log(`Example app listening on port ${port}`))
