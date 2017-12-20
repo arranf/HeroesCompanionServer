@@ -4,6 +4,9 @@
   "description": "A tool for identifying the Heroes of Storm heroes that are free to play this week",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "chrono-node": "^1.3.5",
     "express": "^4.16.2",
