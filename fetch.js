@@ -4,6 +4,7 @@ const jquery = require('jquery');
 const nightmare = new Nightmare({ show: false });
 const chrono = require('chrono-node')
 const fs = require('fs');
+const titleCase = require('title-case');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
@@ -20,12 +21,12 @@ function fetch() {
           item = {}
           var name = el.find('.hero-list__item__name')[0]
           if (name){
-            item.name = name.innerText
+            item.name = titleCase(name.innerText)
           }
 
           var title = el.find('.hero-list__item__title')[0]
           if (title) {
-            item.title = title.innerText
+            item.title = titleCase(title.innerText)
           }
 
           var isFreeToPlay = $(el).find('.hero-list__item__free-flag')
