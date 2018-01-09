@@ -30,12 +30,12 @@ function readData() {
 }
 
 // fetch latest and then schedule getting latest 
-// TODO remove this, for testing only
-// updateRotation()
+updateRotation()
 cron.schedule('27,57 * * * *', function() {
   updateRotation()
 }, true)
 
+// Serve data at root domain
 app.get('/', function (req, res) {
   res.send(data);
 })
