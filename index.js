@@ -4,37 +4,41 @@ const fs = require('fs')
 var cron = require('node-cron');
 
 var fetch = require('./fetch');
- 
-fetch()
-cron.schedule('15,45 * * * *', function(){
-  console.log('Cron Running')
+
+let data =  ''
+let lastRead
+
+function updateRotation() {
   fetch()
-}, true)
-
-
-function readData() {
-  fs.readFile('./data.json', 'utf8', function (err,d) {
-    if (err) {
-      return console.log(err);
-    }
-    data = d
-  });
+  .then(() => readData())
+  .then(updatedData => {
+    lastRead = Date.now()
+    data = updatedData
+    console.log(`Last read from file ${lastRead}`)
+  })
 }
 
-let data = ''
-readData()
-let lastRead = Date.now()
+function readData() {
+  return new Promise(function (resolve, reject) {
+    fs.readFile('./data.json', 'utf8', function (err, newData) {
+      if (err) {
+        reject(err);
+      }
+      resolve(newData)
+    });
+  })
+}
+
+// fetch latest and then schedule getting latest 
+// TODO remove this, for testing only
+// updateRotation()
+cron.schedule('20,50 * * * *', function() {
+  updateRotation()
+}, true)
 
 app.get('/', function (req, res) {
-  //60000
-  if (Date.now()  > lastRead + (6 * 15)) {
-    readData()
-    lastRead =  Date.now()
-  }
   res.send(data);
 })
 
-
 var port = process.env.PORT || 8080;
-
 app.listen(port, () => console.log(`Listening on port ${port}`))

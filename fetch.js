@@ -10,7 +10,7 @@ function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
   console.log('Fetching data')
   // Nightmare example: https://github.com/nelsonkhan/nightmare-gigs/blob/master/gigs.js
-  nightmare
+  return nightmare
       .goto('http://eu.battle.net/heroes/en/heroes/')
       .wait('.hero-list:last-child')
       .evaluate(() => {
@@ -59,15 +59,18 @@ function fetch() {
           hero['name'] = titleCase(hero['name'])
           hero['title'] = titleCase(hero['title'])
         })
-        fs.writeFile('data.json', JSON.stringify(data), (err) => {  
-          // throws an error, caught outside
-          if (err) {
-            throw err; 
-          }
-      
-          // success case, the file was saved
-          console.log(`Data Saved ${new Date()}`);
-      })
+        return new Promise(function (resolve, reject) {
+          fs.writeFile('data.json', JSON.stringify(data), (err) => {  
+              // throws an error, caught outside
+              if (err) {
+                reject(err)
+              }
+          
+              // success case, the file was saved
+              console.log(`Data Saved ${new Date()}`);
+              resolve(data)
+          })
+        })
     })
     .catch((error) => console.error(error))
 }
