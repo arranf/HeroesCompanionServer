@@ -5,7 +5,7 @@ var cron = require('node-cron');
 
 var fetch = require('./fetch');
 
-let data =  ''
+let data =  JSON.stringify({})
 let lastRead
 
 function updateRotation() {
