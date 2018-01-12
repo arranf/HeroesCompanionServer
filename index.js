@@ -1,7 +1,7 @@
+const express = require('express')
 const app = express()
 let rotationData = require('./services/rotation_service')
 let {updateData, updateId} = require('./services/update_service')
-const express = require('express')
 
 var env = process.env.NODE_ENV || 'development';
 if ('production' == env) {
