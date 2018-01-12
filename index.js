@@ -4,7 +4,8 @@ let rotationData = require('./services/rotation_service')
 let {updateData, updateId} = require('./services/update_service')
 var enforce = require('express-sslify');
 
-app.use(enforce)
+app.use(enforce.HTTPS())
+
 // Serve data at root domain
 app.get('/', function (req, res) {
   res.send(rotationData());
