@@ -1,10 +1,15 @@
-const express = require('express')
-const sslRedirect = require('heroku-ssl-redirect');
 const app = express()
 let rotationData = require('./services/rotation_service')
 let {updateData, updateId} = require('./services/update_service')
 
-app.use(sslRedirect());
+const express = require('express')
+
+app.set('forceSSLOptions', {
+  enable301Redirects: true,
+  trustXFPHeader: false,
+  httpsPort: 443,
+  sslRequiredMessage: 'SSL Required.'
+});
 
 // Serve data at root domain
 app.get('/', function (req, res) {
