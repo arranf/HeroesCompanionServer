@@ -61,7 +61,7 @@ function fetch() {
           hero['title'] = titleCase(hero['title'])
         })
         return new Promise(function (resolve, reject) {
-          fs.writeFile('data.json', JSON.stringify(data), (err) => {  
+          fs.writeFile('rotation_data.json', JSON.stringify(data), (err) => {  
               // throws an error, caught outside
               if (err) {
                 reject(err)
