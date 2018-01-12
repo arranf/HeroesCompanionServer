@@ -7,7 +7,7 @@ let updateId = ''
 // fetch latest and then schedule getting latest 
 getUpdateData();
 var cron = require('node-cron')
-cron.schedule('22,52 * * * *', function() {
+cron.schedule('*/10 * * * *', function() {
   getUpdateData()
 }, true)
 
@@ -15,7 +15,7 @@ function getUpdateData() {
   console.log('Fetching update data')
   axios.get('https://s3-eu-west-1.amazonaws.com/data.heroescompanion.com/data.json')
   .then(response => {
-    console.log(response.data.id)
+    console.log(`Id: ${response.data.id}`)
     lastRead = Date.now()
     updateData = response.data
     updateId = updateData.id
