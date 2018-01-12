@@ -4,12 +4,14 @@ let {updateData, updateId} = require('./services/update_service')
 
 const express = require('express')
 
-app.set('forceSSLOptions', {
-  enable301Redirects: true,
-  trustXFPHeader: false,
-  httpsPort: 443,
-  sslRequiredMessage: 'SSL Required.'
-});
+app.configure('production', => {
+  app.use((req, res, next) => {
+    if (req.header 'x-forwarded-proto' !== 'https')
+      res.redirect(`https://${req.header('host')}${req.url}`)
+    else
+      next()
+  })
+})
 
 // Serve data at root domain
 app.get('/', function (req, res) {
