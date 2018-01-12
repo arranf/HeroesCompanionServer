@@ -1,17 +1,19 @@
 const app = express()
 let rotationData = require('./services/rotation_service')
 let {updateData, updateId} = require('./services/update_service')
-
 const express = require('express')
 
-app.configure('production', => {
+var env = process.env.NODE_ENV || 'development';
+if ('production' == env) {
   app.use((req, res, next) => {
-    if (req.header 'x-forwarded-proto' !== 'https')
+    if (req.header 'x-forwarded-proto' !== 'https') {
       res.redirect(`https://${req.header('host')}${req.url}`)
-    else
+    }
+    else {
       next()
+    }
   })
-})
+}
 
 // Serve data at root domain
 app.get('/', function (req, res) {
