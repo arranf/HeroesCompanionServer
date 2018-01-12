@@ -2,19 +2,9 @@ const express = require('express')
 const app = express()
 let rotationData = require('./services/rotation_service')
 let {updateData, updateId} = require('./services/update_service')
+var enforce = require('express-sslify');
 
-var env = process.env.NODE_ENV || 'development';
-if ('production' == env) {
-  app.use((req, res, next) => {
-    if (req.header['x-forwarded-proto'] !== 'https') {
-      res.redirect(`https://${req.header('host')}${req.url}`)
-    }
-    else {
-      next()
-    }
-  })
-}
-
+app.use(enforce)
 // Serve data at root domain
 app.get('/', function (req, res) {
   res.send(rotationData());
