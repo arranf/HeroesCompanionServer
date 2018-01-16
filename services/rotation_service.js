@@ -7,7 +7,7 @@ let lastRead
 // fetch latest and then schedule getting latest 
 updateRotation();
 var cron = require('node-cron');
-cron.schedule('27,57 * * * *', function() {
+cron.schedule('*/15 * * * *', function() {
   updateRotation()
 }, true)
 
