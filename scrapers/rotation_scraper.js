@@ -1,4 +1,3 @@
-
 const Nightmare = require('nightmare');
 const jquery = require('jquery'); 
 const nightmare = new Nightmare({ show: false });
@@ -8,7 +7,7 @@ const titleCase = require('title-case');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
-  console.log('Fetching data')
+  console.log('Fetching rotation data')
   // Nightmare example: https://github.com/nelsonkhan/nightmare-gigs/blob/master/gigs.js
   return nightmare
       .goto('http://eu.battle.net/heroes/en/heroes/')
@@ -68,7 +67,7 @@ function fetch() {
               }
           
               // success case, the file was saved
-              console.log(`Data Saved ${new Date()}`);
+              console.log(`Rotation Data Saved ${new Date()}`);
               resolve(data)
           })
         })

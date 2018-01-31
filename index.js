@@ -1,25 +1,25 @@
-const express = require('express')
-const app = express()
-let rotationData = require('./services/rotation_service')
-var patchData = require('./services/patch_service');
-let {updateData, updateId} = require('./services/update_service')
-var enforce = require('express-sslify');
+const express = require('express');
+const app = express();
+let rotationData = require('./services/rotation_service');
+let patchData = require('./services/patch_service');
+let {updateData, updateId} = require('./services/update_service');
+let tipData = require('./services/tips_service')
+const enforce = require('express-sslify');
 
 // app.use(enforce.HTTPS({ trustProtoHeader: true }))
 
 // Serve data at root domain
 app.get('/', function (req, res) {
   res.send(rotationData());
-})
+});
 
 app.get('/v1/rotation', function (req, res) {
   res.send(rotationData());
-})
+});
 
 app.get('/v1/update', function (req, res) {
-  // console.log(updateData)
   res.send(updateData());
-})
+});
 
 app.get('/v1/update/id', function (req, res) {
   res.send({id: updateId()});
@@ -27,6 +27,10 @@ app.get('/v1/update/id', function (req, res) {
 
 app.get('/v1/patches', function (req, res) {
   res.send(patchData());
+})
+
+app.get('/v1/tips', function (req, res) {
+  res.send(tipData());
 })
 
 var port = process.env.PORT || 8080;

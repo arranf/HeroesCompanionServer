@@ -1,4 +1,4 @@
-var fetchRotation = require('./scrape_rotation');
+var fetchRotation = require('../scrapers/rotation_scraper');
 
 const fs = require('fs')
 let rotationData =  JSON.stringify({})
@@ -17,7 +17,7 @@ function updateRotation() {
   .then(data => {
     lastRead = Date.now()
     rotationData = data
-    console.log(`Last read from file ${lastRead}`)
+    console.log(`Last read rotation from file ${lastRead}`)
   })
 }
 
