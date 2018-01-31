@@ -29,7 +29,7 @@ function updateTips() {
 
 function readTipData() {
   return new Promise(function (resolve, reject) {
-    fs.readFile('./tips_data.json', 'utf8', function (err, data) {
+    fs.readFile('tips_data.json', 'utf8', function (err, data) {
       if (err) {
         reject(err);
       }
