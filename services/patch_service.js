@@ -37,6 +37,11 @@ function getPatchData() {
         let fullBuild = buildData.find((b) => b.fullVersion === hotsDogBuild.ID)
         if (fullBuild) {
           fullBuild['patchNotesUrl'] = `heroespatchnotes.com/patch/${fullBuild.liveDate}-${fullBuild.patchType.toLowerCase().replace(' ','-')}.html`
+          delete fullBuild['internalId']
+          delete fullBuild['liveBuild']
+          delete fullBuild['ptrOfficialLink']
+          delete fullBuild['ptrDate']
+          delete fullBuild['ptrBuild']
           ourPatchData.push(fullBuild)
         }
       });
