@@ -1,7 +1,7 @@
 
 const Nightmare = require('nightmare');
 const jquery = require('jquery'); 
-let nightmare = new Nightmare({ show: true,  waitTimeout: 5000, executionTimeout: 2000 });
+let nightmare = new Nightmare({ show: false,  waitTimeout: 5000, executionTimeout: 2000 });
 const fs = require('fs');
 
 async function getTips (url) {
