@@ -32,7 +32,6 @@ function getPatchData() {
 
   Promise.all([hotsDogBuilds, allBuilds])
     .then(([hotsDogData, buildData]) => {
-      console.log(JSON.stringify(buildData))
       let ourPatchData = []
       hotsDogData.forEach(hotsDogBuild => {
         let fullBuild = buildData.find((b) => b.fullVersion && b.fullVersion.includes(hotsDogBuild.ID))
