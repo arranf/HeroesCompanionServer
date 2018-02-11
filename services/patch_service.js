@@ -39,6 +39,8 @@ function getPatchData() {
         if (fullBuild) {
           fullBuild['patchNotesUrl'] = `heroespatchnotes.com/patch/${fullBuild.liveDate}-${fullBuild.patchType.toLowerCase().replace(' ','-')}.html`
           fullBuild['fullVersion'] = hotsDogBuild.ID
+          fullBuild['hotsDogId'] = hotsDogBuild.ID
+          fullBuild['gameVersion'] = fullBuild['gameVersion']+'UNIQUE'   
           delete fullBuild['internalId']
           delete fullBuild['liveBuild']
           delete fullBuild['ptrOfficialLink']
