@@ -32,17 +32,29 @@ function getPatchData() {
 
   Promise.all([hotsDogBuilds, allBuilds])
     .then(([hotsDogData, buildData]) => {
+      console.log(JSON.stringify(buildData))
       let ourPatchData = []
       hotsDogData.forEach(hotsDogBuild => {
-        let fullBuild = buildData.find((b) => b.fullVersion === hotsDogBuild.ID)
+        let fullBuild = buildData.find((b) => b.fullVersion && b.fullVersion.includes(hotsDogBuild.ID))
         if (fullBuild) {
           fullBuild['patchNotesUrl'] = `heroespatchnotes.com/patch/${fullBuild.liveDate}-${fullBuild.patchType.toLowerCase().replace(' ','-')}.html`
+          fullBuild['fullVersion'] = hotsDogBuild.ID
           delete fullBuild['internalId']
           delete fullBuild['liveBuild']
           delete fullBuild['ptrOfficialLink']
           delete fullBuild['ptrDate']
           delete fullBuild['ptrBuild']
           ourPatchData.push(fullBuild)
+        } else {
+          // TODO MAKE THIS SAFE if a hots.dog patch is available before a patch notes update
+          cheekyBuild = {
+            'patchNotesUrl': 'https://us.battle.net/heroes/en/blog/21509171/heroes-of-the-storm-patch-notes-february-6-2018-2-6-2018',
+            'patchName': '',
+            'officialLink': 'https://us.battle.net/heroes/en/blog/21509171/heroes-of-the-storm-patch-notes-february-6-2018-2-6-2018',
+            'alternateLink': '',
+            'patchType': 'Unknown',
+            'gameVersion': ''
+          }
         }
       });
       patchData = ourPatchData;
