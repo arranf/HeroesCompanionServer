@@ -10,7 +10,7 @@ app.use(shrinkRay())
 
 // Serve data at root domain
 app.get('/', function (req, res) {
-  res.send(rotationData());
+  res.send(['/v1/rotation', '/v1/update', '/v1/update/id', '/v1/patches', '/v1/tips']);
 });
 
 app.get('/v1/rotation', function (req, res) {
