@@ -63,6 +63,7 @@ async function run () {
             resolve(data)
         })
       })
+      // .then(uploadtoS3())
     })
     .catch(e => console.error(e))
 }
