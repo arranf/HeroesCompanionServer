@@ -9,9 +9,18 @@ async function fetchAllHeroWinRates (html) {
         listItem: '#DataTables_Table_0 > tbody > tr',
         data: {
           name: 'td:nth-child(2)',
-          played: 'td:nth-child(3)',
-          popularity: 'td:nth-child(5)',
-          winPercentage: 'td:nth-child(6)',
+          played: {
+            selector: 'td:nth-child(3)',
+            convert: x => x.replace(',', '')
+          },
+          popularity: {
+            selector: 'td:nth-child(5)',
+            convert: x => x.replace(' %', '')
+          },
+          winPercentage: {
+            selector: 'td:nth-child(6)',
+            convert: x => x.replace(' %', '')
+          },
           link: {
             selector: 'a',
             attr: 'href'
@@ -27,8 +36,14 @@ async function scrapeHeroPage (html) {
     builds: {
       listItem: '[id$=\'PopularTalentBuilds\'] tbody > tr',
       data: {
-        gamesPlayed: 'td:nth-child(1)',
-        winPercentage: 'td:nth-child(2)',
+        gamesPlayed: {
+          selector: 'td:nth-child(1)',
+          convert: x => x.replace(',', '')
+        },
+        winPercentage: {
+          selector: 'td:nth-child(2)', 
+          convert: x => x.replace(' %', '')
+        },
         talents: {
           listItem: 'img',
           data: {
@@ -47,11 +62,12 @@ async function getHeroSpecificData(page, hero) {
     await page.goto('https://www.hotslogs.com/' + hero.link, {timeout: 0});
     const html = await page.$eval('html', (html) => html.innerHTML);
     return scrapeHeroPage(html)
-    .then((data) => {hero['individualData'] = data; page.close();})
+    .then(async (data) => {hero['individualData'] = data; await page.close();})
     .catch(e => console.error(e))
 }
 
 async function fetch () {
+  const isDebug = process.env.NODE_ENV !== 'production'
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://www.hotslogs.com/Default');
@@ -63,10 +79,12 @@ async function fetch () {
       let hero = heroesData.heroes[heroIndex];
       heroIndex++;
       if (!hero) {
-        console.error('Skipping Malformed hero?')
+        console.error('Skipping malformed hero?')
         continue;
       }
-      console.log(`Visiting ${hero.name}`);
+      if (isDebug) {
+        console.log(`Visiting ${hero.name}`);
+      }
       let page = await browser.newPage();
       promises.push(getHeroSpecificData(page, hero));
     }
