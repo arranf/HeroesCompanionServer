@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
 const scrapeIt = require('scrape-it');
-const fs = require('fs');
 
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html,

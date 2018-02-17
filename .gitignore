@@ -58,3 +58,4 @@ typings/
 .env
 
 logs\.txt
+config.json
