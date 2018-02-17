@@ -1,80 +1,78 @@
 const Nightmare = require('nightmare');
-const jquery = require('jquery'); 
+const jquery = require('jquery');
 const nightmare = new Nightmare({ show: false });
-const chrono = require('chrono-node')
+const chrono = require('chrono-node');
 const fs = require('fs');
 const titleCase = require('title-case');
-const scrapeIt = require("scrape-it");
+const scrapeIt = require('scrape-it');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
-  console.log('Fetching rotation data')
+  console.log('Fetching rotation data');
   // Nightmare example: https://github.com/nelsonkhan/nightmare-gigs/blob/master/gigs.js
   return nightmare
-      .goto('http://eu.battle.net/heroes/en/heroes/')
-      .wait('.hero-list:last-child')
-      .evaluate(() => {
-        let heroes = [];
-        $('.hero-container:not(.placeholder)')
-        .each((i, el) => {
-          el = $(el)
-          item = {}
-          var name = el.find('.hero-list__item__name')[0]
-          if (name){
-            item.name = name.innerText
-          }
+    .goto('http://eu.battle.net/heroes/en/heroes/')
+    .wait('.hero-list:last-child')
+    .evaluate(() => {
+      let heroes = [];
+      $('.hero-container:not(.placeholder)').each((i, el) => {
+        el = $(el);
+        item = {};
+        var name = el.find('.hero-list__item__name')[0];
+        if (name) {
+          item.name = name.innerText;
+        }
 
-          var isFreeToPlay = $(el).find('.hero-list__item__free-flag')
-          item.isFreeToPlay = isFreeToPlay.length > 0
+        var isFreeToPlay = $(el).find('.hero-list__item__free-flag');
+        item.isFreeToPlay = isFreeToPlay.length > 0;
 
-          heroes.push(item)
-        })
-        let durationNodes = $('.free-rotation__date')
-        if (!durationNodes || durationNodes.length <= 0){ 
-          throw new Error('Things broke: Cant determine duration')
-        }
-        let duration = durationNodes[0].innerText
-        
-        return {'heroes': heroes, 'duration': duration}
-      })
-      .end()
-      .catch((error) => console.error(error))
-      .then((data) => {
-        let duration = data['duration']
-        let matches = regex.exec(data['duration'])
-        if (!matches || matches.length != 3){
-          throw new Error('Duration string matching failed')
-        }
-        let start = chrono.parseDate(matches[1])
-        let end = chrono.parseDate(matches[2])
-        if (end.getUTCMilliseconds() > Date.now()) {
-          // Shit, the website isn't updated yet
-          return fetchFromForum()
-        } else {
-          // We can trust the website's data
-            end.setHours(03)
-            data['time'] = new Date().toISOString()  
-            data['start'] = start
-            data['end'] = end
-            data['heroes'].forEach((hero) => {
-              hero['name'] = titleCase(hero['name'])
-          })
-          return new Promise(function (resolve, reject) {
-            fs.writeFile('rotation_data.json', JSON.stringify(data), (err) => {  
-                // throws an error, caught outside
-                if (err) {
-                  reject(err)
-                }
-            
-                // success case, the file was saved
-                console.log(`Rotation Data Saved ${new Date()}`);
-                resolve(data)
-            })
-          })
-        }
-        
+        heroes.push(item);
+      });
+      let durationNodes = $('.free-rotation__date');
+      if (!durationNodes || durationNodes.length <= 0) {
+        throw new Error('Things broke: Cant determine duration');
+      }
+      let duration = durationNodes[0].innerText;
+
+      return { heroes: heroes, duration: duration };
     })
-    .catch((error) => console.error(error))
+    .end()
+    .catch(error => console.error(error))
+    .then(data => {
+      let duration = data['duration'];
+      let matches = regex.exec(data['duration']);
+      if (!matches || matches.length != 3) {
+        throw new Error('Duration string matching failed');
+      }
+      let start = chrono.parseDate(matches[1]);
+      let end = chrono.parseDate(matches[2]);
+      if (end.getUTCMilliseconds() > Date.now()) {
+        // Shit, the website isn't updated yet
+        return fetchFromForum();
+      } else {
+        // We can trust the website's data
+        end.setHours(03);
+        data['time'] = new Date().toISOString();
+        data['start'] = start;
+        data['end'] = end;
+        data['heroes'].forEach(hero => {
+          hero['name'] = titleCase(hero['name']);
+        });
+        return new Promise(function(resolve, reject) {
+          fs.writeFile('rotation_data.json', JSON.stringify(data), err => {
+            // throws an error, caught outside
+            if (err) {
+              reject(err);
+            }
+
+            // success case, the file was saved
+            console.log(`Rotation Data Saved ${new Date()}`);
+            resolve(data);
+          });
+        });
+      }
+    })
+    .catch(error => console.error(error));
 }
 
 function addDays(date, days) {
@@ -84,57 +82,58 @@ function addDays(date, days) {
 }
 
 function fetchFromForum() {
-
   const heroNameRegex = /(.*)( \(.*\))/;
-  const startDayRegex = /.*: (.*)/
-  
-  return scrapeIt("https://eu.battle.net/forums/en/heroes/topic/13604571130#post-1", 
-  {
-    heroes: {
-      listItem: ".TopicPost:first-child .TopicPost-bodyContent > ul > li"
-    },
-    starting: ".TopicPost:first-child div.TopicPost-bodyContent > span > strong"
-  }
-).then(({ data, response }) => {
-  let output = {}
-  let heroes = []
-  data.heroes.forEach(h => {
-    let matches = heroNameRegex.exec(h)
-    if (!matches && h.includes('(')){
-      throw new Error('Heroes string matching failed')
-    } else if (matches) {
-      h = matches[1]
+  const startDayRegex = /.*: (.*)/;
+
+  return scrapeIt(
+    'https://eu.battle.net/forums/en/heroes/topic/13604571130#post-1',
+    {
+      heroes: {
+        listItem: '.TopicPost:first-child .TopicPost-bodyContent > ul > li'
+      },
+      starting:
+        '.TopicPost:first-child div.TopicPost-bodyContent > span > strong'
     }
-    heroes.push({name: h, isFreeToPlay: true})
-  }
-)
-  output['heroes'] = heroes
-  let matches = startDayRegex.exec(data.starting)
-  if (!matches || matches.length != 2){
-    throw new Error('Starting date string matching failed')
-  }
-  output['duration'] = matches[1]
-  output['start'] = chrono.parseDate(output.duration)
-  output.start.setHours(03)
-  output['end'] = addDays(output.start, 8)
-  output.end.setHours(02)
-  output.end.setMinutes(59)
-  output.end.setSeconds(59)
-  output['time'] = new Date().toISOString()
-  return new Promise(function (resolve, reject) {
-    fs.writeFile('rotation_data.json', JSON.stringify(data), (err) => {  
-        // throws an error, caught outside
-        if (err) {
-          reject(err)
+  )
+    .then(({ data, response }) => {
+      let output = {};
+      let heroes = [];
+      data.heroes.forEach(h => {
+        let matches = heroNameRegex.exec(h);
+        if (!matches && h.includes('(')) {
+          throw new Error('Heroes string matching failed');
+        } else if (matches) {
+          h = matches[1];
         }
-    
-        // success case, the file was saved
-        console.log(`Rotation Data Saved ${new Date()}`);
-        resolve(output)
+        heroes.push({ name: h, isFreeToPlay: true });
+      });
+      output['heroes'] = heroes;
+      let matches = startDayRegex.exec(data.starting);
+      if (!matches || matches.length != 2) {
+        throw new Error('Starting date string matching failed');
+      }
+      output['duration'] = matches[1];
+      output['start'] = chrono.parseDate(output.duration);
+      output.start.setHours(03);
+      output['end'] = addDays(output.start, 8);
+      output.end.setHours(02);
+      output.end.setMinutes(59);
+      output.end.setSeconds(59);
+      output['time'] = new Date().toISOString();
+      return new Promise(function(resolve, reject) {
+        fs.writeFile('rotation_data.json', JSON.stringify(data), err => {
+          // throws an error, caught outside
+          if (err) {
+            reject(err);
+          }
+
+          // success case, the file was saved
+          console.log(`Rotation Data Saved ${new Date()}`);
+          resolve(output);
+        });
+      });
     })
-  })
-})
-.catch((error) => console.error(error))
+    .catch(error => console.error(error));
 }
 
-module.exports = fetch
+module.exports = fetch;
