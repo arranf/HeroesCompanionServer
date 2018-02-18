@@ -2,7 +2,16 @@ const { readFile } = require('./file_service');
 let axios = require('axios');
 
 let AWS = require('aws-sdk');
-AWS.config.loadFromPath('./config.json');
+var fs = require('fs');
+if (fs.existsSync('./config.json')) {
+  AWS.config.loadFromPath('./config.json');
+} else {
+  AWS.config.update({
+    accessKeyId: process.env.S3_KEY,
+    secretAccessKey: process.env.S3_SECRET
+  })
+}
+
 AWS.config.update({ region: 'eu-west-1' });
 s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
