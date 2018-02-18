@@ -41,10 +41,6 @@ app.get('/v1/patches', function (req, res) {
   res.send(patchData());
 });
 
-app.get('/v1/tips', function (req, res) {
-  res.send(tipData());
-});
-
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
   let data = hotsLogBuilds(heroName);
