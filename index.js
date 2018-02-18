@@ -1,7 +1,9 @@
+// Express
 const express = require('express');
 const app = express();
 let shrinkRay = require('shrink-ray');
-const mongoose = require('mongoose');
+
+// Data
 let rotationData = require('./services/rotation_service');
 let patchData = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
@@ -10,18 +12,15 @@ let {
   hotslogsWinRates,
   hotsLogBuilds
 } = require('./services/hots_log_service');
+
+// DB
+const mongoose = require('mongoose');
 const Build = require('./models/build');
 
-let connection;
-if (process.env.NODE_ENV === 'production') {
- connection = mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`);
-}  else {
-  connection = mongoose.connect('mongodb://localhost:27017/heroescompanion');
-}
-
+// Compression
 app.use(shrinkRay());
 
-// Serve data at root domain
+// Routes
 app.get('/', function (req, res) {
   res.send('Heroes Companion - A project of passion');
 });
@@ -70,6 +69,15 @@ app.get('/v1/builds/:hero', function (req, res) {
   });
 });
 
+// Connect to DB
+let connection;
+if (process.env.NODE_ENV === 'production') {
+ connection = mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`);
+}  else {
+  connection = mongoose.connect('mongodb://localhost:27017/heroescompanion');
+}
+
+// Start app after connection
 connection.then(
   () => {
     let port = process.env.PORT || 8080;
