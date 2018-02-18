@@ -3,7 +3,7 @@ let axios = require('axios');
 
 let AWS = require('aws-sdk');
 var fs = require('fs');
-if (fs.existsSync(path)) {
+if (fs.existsSync('./config.json')) {
   AWS.config.loadFromPath('./config.json');
 } else {
   AWS.config.update({
