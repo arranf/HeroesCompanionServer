@@ -1,12 +1,12 @@
 let fetchHotsLogsData = require('../scrapers/hots_log_scraper');
-const {readFile, writeFile} = require('../services/file_service');
-const {uploadtoS3, downloadFromS3} = require('../services/s3_service');
+const { readFile, writeFile } = require('../services/file_service');
+const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
 
 let hotsLogData = JSON.stringify({});
 let hotsLogWinrates = JSON.stringify({});
 let lastRead;
 
-const hotsLogFileName = 'hots_log.json'
+const hotsLogFileName = 'hots_log.json';
 
 // fetch latest and then schedule getting latest
 // updateHotslogData();
@@ -20,7 +20,7 @@ cron.schedule(
   true
 );
 
-function generateData(data) {
+function generateData (data) {
   lastRead = Date.now();
   hotsLogData = data.heroes;
   let wr = JSON.parse(JSON.stringify(data.heroes));
@@ -42,19 +42,23 @@ function updateHotslogData () {
 
 function getInitialData () {
   downloadFromS3(hotsLogFileName)
-  .then(data => writeFile(hotsLogFileName, data, () => console.log('Got hots log data from S3')))
-  .then(data => {
-    generateData(data);
-  })
-  .catch(error => console.error(error));
+    .then(data =>
+      writeFile(hotsLogFileName, data, () =>
+        console.log('Got hots log data from S3')
+      )
+    )
+    .then(data => {
+      generateData(data);
+    })
+    .catch(error => console.error(error));
 }
 
 function hotsLogBuilds (heroName) {
   let hero = hotsLogData.find(h => h.name === heroName);
   if (hero) {
     return hero.builds;
-  } 
+  }
   return null;
 }
 
-module.exports = {hotslogsWinRates: () => hotsLogWinrates, hotsLogBuilds};
+module.exports = { hotslogsWinRates: () => hotsLogWinrates, hotsLogBuilds };

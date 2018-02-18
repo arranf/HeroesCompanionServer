@@ -5,7 +5,10 @@ let rotationData = require('./services/rotation_service');
 let patchData = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
 let tipData = require('./services/tips_service');
-let {hotslogsWinRates, hotsLogBuilds} = require('./services/hots_log_service');
+let {
+  hotslogsWinRates,
+  hotsLogBuilds
+} = require('./services/hots_log_service');
 
 app.use(shrinkRay());
 
@@ -40,22 +43,20 @@ app.get('/v1/tips', function (req, res) {
   res.send(tipData());
 });
 
-
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
   let data = hotsLogBuilds(heroName);
   if (data) {
     res.send(data);
   } else {
-    res.status(404)
-    res.send({error: `No data found for ${heroName}`})
+    res.status(404);
+    res.send({ error: `No data found for ${heroName}` });
   }
 });
 
-app.get('/v1/hotslogs', function (req, res){
-  res.send(hotslogsWinRates()); 
+app.get('/v1/hotslogs', function (req, res) {
+  res.send(hotslogsWinRates());
 });
-
 
 var port = process.env.PORT || 8080;
 app.listen(port, () => console.log(`Listening on port ${port}`));

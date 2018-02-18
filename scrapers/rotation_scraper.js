@@ -4,7 +4,7 @@ const nightmare = new Nightmare({ show: false });
 const chrono = require('chrono-node');
 const titleCase = require('title-case');
 const scrapeIt = require('scrape-it');
-const {writeJSONFile} = require('../services/file_service');
+const { writeJSONFile } = require('../services/file_service');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
@@ -58,7 +58,9 @@ function fetch() {
         data['heroes'].forEach(hero => {
           hero['name'] = titleCase(hero['name']);
         });
-        return writeJSONFile('rotation_data.json', data, () => console.log(`Rotation Data Saved ${new Date()}`));
+        return writeJSONFile('rotation_data.json', data, () =>
+          console.log(`Rotation Data Saved ${new Date()}`)
+        );
       }
     })
     .catch(error => console.error(error));
@@ -109,7 +111,9 @@ function fetchFromForum() {
       output.end.setMinutes(59);
       output.end.setSeconds(59);
       output['time'] = new Date().toISOString();
-      return writeJSONFile('rotation_data.json', data, () => console.log(`Rotation Data Saved ${new Date()}`));
+      return writeJSONFile('rotation_data.json', data, () =>
+        console.log(`Rotation Data Saved ${new Date()}`)
+      );
     })
     .catch(error => console.error(error));
 }

@@ -1,6 +1,6 @@
 const Nightmare = require('nightmare');
 const jquery = require('jquery');
-const {writeJSONFile} = require('../services/file_service');
+const { writeJSONFile } = require('../services/file_service');
 let nightmare = new Nightmare({
   show: false,
   waitTimeout: 5000,
@@ -60,7 +60,11 @@ async function run () {
 
   return nightmare
     .end()
-    .then(() => writeJSONFile('tips_data.json', data, () => console.log(`Tip Data Saved ${new Date()}`)))
+    .then(() =>
+      writeJSONFile('tips_data.json', data, () =>
+        console.log(`Tip Data Saved ${new Date()}`)
+      )
+    )
     .catch(e => console.error(e));
 }
 

@@ -12,7 +12,7 @@ function readFile (fileName) {
 }
 
 function writeJSONFile (fileName, data, successCallback) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     fs.writeFile(fileName, JSON.stringify(data), err => {
       // throws an error, caught outside
       if (err) {
@@ -29,7 +29,7 @@ function writeJSONFile (fileName, data, successCallback) {
 }
 
 function writeFile (fileName, data, successCallback) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     fs.writeFile(fileName, data, err => {
       // throws an error, caught outside
       if (err) {
@@ -45,5 +45,4 @@ function writeFile (fileName, data, successCallback) {
   });
 }
 
-
-module.exports = {writeJSONFile, readFile, writeFile};
+module.exports = { writeJSONFile, readFile, writeFile };
