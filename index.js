@@ -64,7 +64,7 @@ app.get('/v1/hotslogs', function (req, res) {
 });
 
 app.get('/v1/builds/:hero', function (req, res) {
-  Build.find({HeroName: req.params.hero}, function(err, builds) {
+  Build.find({HeroId: req.params.hero}, function(err, builds) {
     if (err) {
       res.send(err);
     }
