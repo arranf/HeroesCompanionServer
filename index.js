@@ -68,7 +68,8 @@ app.get('/v1/builds/:hero', function (req, res) {
 // Connect to DB
 let connection;
 if (process.env.NODE_ENV === 'production') {
- connection = mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`);
+  const connectionString = `mongodb://ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`;
+  connection = mongoose.connect(connectionString, {user: process.env.DB_USER, pass: process.env.DB_PASSWORD});
 }  else {
   connection = mongoose.connect('mongodb://localhost:27017/heroescompanion');
 }
