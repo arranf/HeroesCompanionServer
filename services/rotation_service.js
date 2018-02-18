@@ -10,9 +10,9 @@ const rotationFileName = 'rotation_data.json';
 
 // fetch latest and then schedule getting latest
 getInitialRotation();
-var cron = require('node-cron');
+let cron = require('node-cron');
 cron.schedule(
-  '*/15 * * * *',
+  '0,3,10, 30 * * * *',
   function () {
     updateRotation();
   },
