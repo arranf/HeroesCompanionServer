@@ -1,16 +1,13 @@
 var fetchTips = require('../scrapers/icy_veins_scraper');
+const { readFile, writeFile } = require('../services/file_service');
+const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
 
-const fs = require('fs');
 let tipData = JSON.stringify({});
 let lastRead;
+const tipDataFileName = 'tips_data.json';
 
 // fetch latest and then schedule getting latest
-readTipData().then(data => {
-  lastRead = Date.now();
-  tipData = data;
-  console.log(`Last read tips from file ${lastRead}`);
-});
-updateTips();
+getInitialTipData();
 var cron = require('node-cron');
 cron.schedule(
   '* * */12 * *',
@@ -22,23 +19,29 @@ cron.schedule(
 
 function updateTips () {
   fetchTips()
-    .then(() => readTipData())
+    .then(() => readFile(tipDataFileName))
+    .then(data => {
+      lastRead = Date.now();
+      tipData = JSON.parse(data);
+      console.log(`Last read tips from file ${lastRead}`);
+      uploadtoS3(tipDataFileName);
+    })
+    .catch(error => console.error(error));
+}
+
+function getInitialTipData () {
+  downloadFromS3(tipDataFileName)
+    .then(data =>
+      writeFile(tipDataFileName, data, () =>
+        console.log('Got tip data from S3')
+      )
+    )
     .then(data => {
       lastRead = Date.now();
       tipData = data;
       console.log(`Last read tips from file ${lastRead}`);
-    });
-}
-
-function readTipData () {
-  return new Promise(function (resolve, reject) {
-    fs.readFile('tips_data.json', 'utf8', function (err, data) {
-      if (err) {
-        reject(err);
-      }
-      resolve(data);
-    });
-  });
+    })
+    .catch(error => console.error(error));
 }
 
 module.exports = () => tipData;

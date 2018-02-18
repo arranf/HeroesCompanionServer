@@ -58,3 +58,6 @@ typings/
 .env
 
 logs\.txt
+config.json
+
+hots_log\.json

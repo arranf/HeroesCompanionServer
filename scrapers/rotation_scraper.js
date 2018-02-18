@@ -2,9 +2,9 @@ const Nightmare = require('nightmare');
 const jquery = require('jquery');
 const nightmare = new Nightmare({ show: false });
 const chrono = require('chrono-node');
-const fs = require('fs');
 const titleCase = require('title-case');
 const scrapeIt = require('scrape-it');
+const { writeJSONFile } = require('../services/file_service');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
@@ -58,18 +58,9 @@ function fetch() {
         data['heroes'].forEach(hero => {
           hero['name'] = titleCase(hero['name']);
         });
-        return new Promise(function(resolve, reject) {
-          fs.writeFile('rotation_data.json', JSON.stringify(data), err => {
-            // throws an error, caught outside
-            if (err) {
-              reject(err);
-            }
-
-            // success case, the file was saved
-            console.log(`Rotation Data Saved ${new Date()}`);
-            resolve(data);
-          });
-        });
+        return writeJSONFile('rotation_data.json', data, () =>
+          console.log(`Rotation Data Saved ${new Date()}`)
+        );
       }
     })
     .catch(error => console.error(error));
@@ -120,18 +111,9 @@ function fetchFromForum() {
       output.end.setMinutes(59);
       output.end.setSeconds(59);
       output['time'] = new Date().toISOString();
-      return new Promise(function(resolve, reject) {
-        fs.writeFile('rotation_data.json', JSON.stringify(data), err => {
-          // throws an error, caught outside
-          if (err) {
-            reject(err);
-          }
-
-          // success case, the file was saved
-          console.log(`Rotation Data Saved ${new Date()}`);
-          resolve(output);
-        });
-      });
+      return writeJSONFile('rotation_data.json', data, () =>
+        console.log(`Rotation Data Saved ${new Date()}`)
+      );
     })
     .catch(error => console.error(error));
 }

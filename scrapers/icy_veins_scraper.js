@@ -1,11 +1,11 @@
 const Nightmare = require('nightmare');
 const jquery = require('jquery');
+const { writeJSONFile } = require('../services/file_service');
 let nightmare = new Nightmare({
   show: false,
   waitTimeout: 5000,
   executionTimeout: 2000
 });
-const fs = require('fs');
 
 async function getTips (url) {
   return nightmare
@@ -58,23 +58,13 @@ async function run () {
     return dataArray;
   }, Promise.resolve([]));
 
-  nightmare
+  return nightmare
     .end()
-    .then(() => {
-      return new Promise(function (resolve, reject) {
-        fs.writeFile('tips_data.json', JSON.stringify(data), err => {
-          // throws an error, caught outside
-          if (err) {
-            reject(err);
-          }
-
-          // success case, the file was saved
-          console.log(`Tip Data Saved ${new Date()}`);
-          resolve(data);
-        });
-      });
-      // .then(uploadtoS3())
-    })
+    .then(() =>
+      writeJSONFile('tips_data.json', data, () =>
+        console.log(`Tip Data Saved ${new Date()}`)
+      )
+    )
     .catch(e => console.error(e));
 }
 

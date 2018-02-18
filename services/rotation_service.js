@@ -1,11 +1,15 @@
+const { readFile, writeFile } = require('../services/file_service');
+const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
+
 var fetchRotation = require('../scrapers/rotation_scraper');
 
-const fs = require('fs');
 let rotationData = JSON.stringify({});
 let lastRead;
 
+const rotationFileName = 'rotation_data.json';
+
 // fetch latest and then schedule getting latest
-updateRotation();
+getInitialRotation();
 var cron = require('node-cron');
 cron.schedule(
   '*/15 * * * *',
@@ -17,23 +21,29 @@ cron.schedule(
 
 function updateRotation () {
   fetchRotation()
-    .then(() => readRotationData())
+    .then(() => readFile(rotationFileName))
+    .then(data => {
+      lastRead = Date.now();
+      rotationData = JSON.parse(data);
+      console.log(`Last read rotation from file ${lastRead}`);
+      return uploadtoS3(rotationFileName);
+    })
+    .catch(error => console.error('Rotation Error: ' + error));
+}
+
+function getInitialRotation () {
+  downloadFromS3(rotationFileName)
+    .then(data =>
+      writeFile(rotationFileName, data, () =>
+        console.log('Got rotation data from S3')
+      )
+    )
     .then(data => {
       lastRead = Date.now();
       rotationData = data;
       console.log(`Last read rotation from file ${lastRead}`);
-    });
-}
-
-function readRotationData () {
-  return new Promise(function (resolve, reject) {
-    fs.readFile('rotation_data.json', 'utf8', function (err, data) {
-      if (err) {
-        reject(err);
-      }
-      resolve(data);
-    });
-  });
+    })
+    .catch(error => console.error('Rotation Error: ' + error));
 }
 
 module.exports = () => rotationData;
