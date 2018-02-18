@@ -1,5 +1,5 @@
 var fetchTips = require('../scrapers/icy_veins_scraper');
-const { readFile, writeFile } = require('../services/file_service');
+const { readFile, writeJSONFile } = require('../services/file_service');
 const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
 
 let tipData = JSON.stringify({});
@@ -31,11 +31,7 @@ function updateTips () {
 
 function getInitialTipData () {
   downloadFromS3(tipDataFileName)
-    .then(data =>
-      writeFile(tipDataFileName, data, () =>
-        console.log('Got tip data from S3')
-      )
-    )
+    .then(data => writeJSONFile(tipDataFileName, data))
     .then(data => {
       lastRead = Date.now();
       tipData = data;

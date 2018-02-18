@@ -1,4 +1,4 @@
-const { readFile, writeFile } = require('../services/file_service');
+const { readFile, writeJSONFile } = require('../services/file_service');
 const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
 
 var fetchRotation = require('../scrapers/rotation_scraper');
@@ -34,7 +34,7 @@ function updateRotation () {
 function getInitialRotation () {
   downloadFromS3(rotationFileName)
     .then(data =>
-      writeFile(rotationFileName, data, () =>
+      writeJSONFile(rotationFileName, data, () =>
         console.log('Got rotation data from S3')
       )
     )

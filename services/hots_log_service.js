@@ -1,5 +1,5 @@
 let fetchHotsLogsData = require('../scrapers/hots_log_scraper');
-const { readFile, writeFile } = require('../services/file_service');
+const { readFile, writeJSONFile } = require('../services/file_service');
 const { uploadtoS3, downloadFromS3 } = require('../services/s3_service');
 
 let hotsLogData = JSON.stringify({});
@@ -43,7 +43,7 @@ function updateHotslogData () {
 function getInitialData () {
   downloadFromS3(hotsLogFileName)
     .then(data =>
-      writeFile(hotsLogFileName, data, () =>
+      writeJSONFile(hotsLogFileName, data, () =>
         console.log('Got hots log data from S3')
       )
     )
