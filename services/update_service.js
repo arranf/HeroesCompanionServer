@@ -1,3 +1,6 @@
+const Hero = require('../models/hero')
+const Talent = require('../models/talent')
+
 let updateData = JSON.stringify({});
 let axios = require('axios');
 let lastRead;
@@ -26,8 +29,27 @@ function getUpdateData () {
       updateData = response.data;
       updateId = updateData.id;
       console.log(`Last read from file ${lastRead}`);
+      doSelfUpdate();
     })
     .catch(e => console.error(e));
+}
+
+function doSelfUpdate () {
+  console.log('Starting DB Update');
+  updateData.heroes.forEach(hero => {
+    let query = {HeroId: hero.HeroId};
+    Hero.findOneAndUpdate(query, hero, {upsert:true}, function(err, doc){
+        if (err) console.error(`Error updating hero - Name: ${hero.Name}`);
+    });
+  });
+
+  updateData.talents.forEach(talent => {
+    let query = {HeroId: talent.HeroId, ToolTipId: talent.ToolTipId};
+    Talent.findOneAndUpdate(query, talent, {upsert:true}, function(err, doc){
+        if (err) console.error(`Error updating talent - Hero Id: ${talent.HeroId} Talent: ${talent.Name}`);
+    });
+  });
+  console.log('Finished DB Update');
 }
 
 module.exports = { updateData: () => updateData, updateId: () => updateId };

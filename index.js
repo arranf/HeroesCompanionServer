@@ -1,6 +1,9 @@
+// Express
 const express = require('express');
 const app = express();
 let shrinkRay = require('shrink-ray');
+
+// Data
 let rotationData = require('./services/rotation_service');
 let patchData = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
@@ -10,17 +13,16 @@ let {
   hotsLogBuilds
 } = require('./services/hots_log_service');
 
+// DB
+const mongoose = require('mongoose');
+const Build = require('./models/build');
+
+// Compression
 app.use(shrinkRay());
 
-// Serve data at root domain
+// Routes
 app.get('/', function (req, res) {
-  res.send([
-    '/v1/rotation',
-    '/v1/update',
-    '/v1/update/id',
-    '/v1/patches',
-    '/v1/tips'
-  ]);
+  res.send('Heroes Companion - A project of passion');
 });
 
 app.get('/v1/rotation', function (req, res) {
@@ -39,10 +41,6 @@ app.get('/v1/patches', function (req, res) {
   res.send(patchData());
 });
 
-app.get('/v1/tips', function (req, res) {
-  res.send(tipData());
-});
-
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
   let data = hotsLogBuilds(heroName);
@@ -58,5 +56,30 @@ app.get('/v1/hotslogs', function (req, res) {
   res.send(hotslogsWinRates());
 });
 
-var port = process.env.PORT || 8080;
-app.listen(port, () => console.log(`Listening on port ${port}`));
+app.get('/v1/builds/:hero', function (req, res) {
+  Build.find({HeroName: req.params.hero}, function(err, builds) {
+    if (err) {
+      res.send(err);
+    }
+    res.json(builds);
+  });
+});
+
+// Connect to DB
+let connection;
+if (process.env.NODE_ENV === 'production') {
+ connection = mongoose.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`);
+}  else {
+  connection = mongoose.connect('mongodb://localhost:27017/heroescompanion');
+}
+
+// Start app after connection
+connection.then(
+  () => {
+    let port = process.env.PORT || 8080;
+    app.listen(port, () => console.log(`Listening on port ${port}`));
+  },
+  err => {
+    console.error('Error Connecting to database', err);
+  }
+);
