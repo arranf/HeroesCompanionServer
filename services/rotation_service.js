@@ -24,7 +24,7 @@ function updateRotation () {
     .then(() => readFile(rotationFileName))
     .then(data => {
       lastRead = Date.now();
-      rotationData = data;
+      rotationData = JSON.parse(data);
       console.log(`Last read rotation from file ${lastRead}`);
       return uploadtoS3(rotationFileName);
     })
@@ -38,7 +38,6 @@ function getInitialRotation () {
     lastRead = Date.now();
     rotationData = data;
     console.log(`Last read rotation from file ${lastRead}`);
-    return uploadtoS3(rotationFileName);
   })
   .catch(error => console.error('Rotation Error: ' + error));
 }

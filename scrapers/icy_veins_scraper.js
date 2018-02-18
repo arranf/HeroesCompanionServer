@@ -58,7 +58,7 @@ async function run () {
     return dataArray;
   }, Promise.resolve([]));
 
-  nightmare
+  return nightmare
     .end()
     .then(() => writeJSONFile('tips_data.json', data, () => console.log(`Tip Data Saved ${new Date()}`)))
     .catch(e => console.error(e));

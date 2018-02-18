@@ -22,7 +22,7 @@ function updateTips () {
     .then(() => readFile(tipDataFileName))
     .then(data => {
       lastRead = Date.now();
-      tipData = data;
+      tipData = JSON.parse(data);
       console.log(`Last read tips from file ${lastRead}`);
       uploadtoS3(tipDataFileName)
     })
@@ -37,7 +37,6 @@ function getInitialTipData () {
     lastRead = Date.now();
     tipData = data;
     console.log(`Last read tips from file ${lastRead}`);
-    uploadtoS3(tipDataFileName)
   })
   .catch(error => console.error(error));
 }

@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const scrapeIt = require('scrape-it');
+const {writeJSONFile} = require('../services/file_service');
 
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html,
@@ -61,7 +62,7 @@ async function getHeroSpecificData(page, hero) {
     await page.goto('https://www.hotslogs.com/' + hero.link, {timeout: 0});
     const html = await page.$eval('html', (html) => html.innerHTML);
     return scrapeHeroPage(html)
-    .then(async (data) => {hero['individualData'] = data; await page.close();})
+    .then(async (data) => {Object.assign(hero, data); await page.close();})
     .catch(e => console.error(e))
 }
 
@@ -91,7 +92,7 @@ async function fetch () {
     .catch(e => console.error(e));
   }
   await browser.close();
-  return heroesData;
+  return writeJSONFile('hots_log.json', heroesData);
 }
 
 
