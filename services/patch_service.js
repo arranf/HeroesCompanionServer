@@ -76,6 +76,8 @@ function saveV2PatchData (hotsDogData, buildData) {
       delete patchNotesBuild['ptrBuild'];
       ourPatchData.push(patchNotesBuild);
     });
+    ourPatchData.reverse();
+    ourPatchData = ourPatchData.slice(0, 4);
   patchDatav2 = ourPatchData;
   console.log('Got v2 patch data');
 }
