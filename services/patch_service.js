@@ -1,4 +1,5 @@
-let patchData = JSON.stringify({});
+let patchDatav1 = JSON.stringify({});
+let patchDatav2 = JSON.stringify({});
 let axios = require('axios');
 let lastRead;
 
@@ -13,33 +14,8 @@ cron.schedule(
   true
 );
 
-function getPatchData () {
-  console.log('Fetching patch data');
-  let hotsDogBuilds = axios
-    .get('https://hots.dog/api/init')
-    .then(response => {
-      if (!response.data) {
-        throw new Error('Unable to get hots patch data');
-      }
-      return response.data.Builds;
-    })
-    .catch(e => console.error(e));
-
-  let allBuilds = axios
-    .get(
-      'https://raw.githubusercontent.com/heroespatchnotes/heroes-patch-data/master/patchversions.json'
-    )
-    .then(response => {
-      if (!response.data) {
-        throw new Error('Unable to get patch data from Github');
-      }
-      return response.data;
-    })
-    .catch(e => console.error(e));
-
-  Promise.all([hotsDogBuilds, allBuilds])
-    .then(([hotsDogData, buildData]) => {
-      let ourPatchData = [];
+function saveV1PatchData (hotsDogData, buildData) {
+  let ourPatchData = [];
       hotsDogData.forEach(hotsDogBuild => {
         let fullBuild = buildData.find(
           b => b.fullVersion && b.fullVersion.includes(hotsDogBuild.ID)
@@ -71,10 +47,69 @@ function getPatchData () {
           };
         }
       });
-      patchData = ourPatchData;
-      console.log('Got patch data');
+      patchDatav1 = ourPatchData;
+      console.log('Got v1 patch data');
+}
+
+function saveV2PatchData (hotsDogData, buildData) {
+  let ourPatchData = [];
+  let year = (new Date()).getFullYear();
+  buildData.forEach(patchNotesBuild => {
+    if (!patchNotesBuild.fullVersion || 
+        !(patchNotesBuild.liveDate.includes(year.toString()) || patchNotesBuild.liveDate.includes((year-1).toString()))
+      ) {
+      return;
+    }
+
+      let hotsDogBuild = hotsDogData.find(b => patchNotesBuild.fullVersion.includes(b.ID));
+
+      patchNotesBuild['patchNotesUrl'] = `heroespatchnotes.com/patch/${
+        patchNotesBuild.liveDate
+      }-${patchNotesBuild.patchType.toLowerCase().replace(' ', '-')}.html`;
+      if (hotsDogBuild) {
+        patchNotesBuild['hotsDogId'] = hotsDogBuild.ID;
+      }
+      delete patchNotesBuild['internalId'];
+      delete patchNotesBuild['liveBuild'];
+      delete patchNotesBuild['ptrOfficialLink'];
+      delete patchNotesBuild['ptrDate'];
+      delete patchNotesBuild['ptrBuild'];
+      ourPatchData.push(patchNotesBuild);
+    });
+  patchDatav2 = ourPatchData;
+  console.log('Got v2 patch data');
+}
+
+function getPatchData () {
+  console.log('Fetching patch data');
+  let hotsDogBuilds = axios
+    .get('https://hots.dog/api/init')
+    .then(response => {
+      if (!response.data) {
+        throw new Error('Unable to get hots patch data');
+      }
+      return response.data.Builds;
+    })
+    .catch(e => console.error(e));
+
+  let allBuilds = axios
+    .get(
+      'https://raw.githubusercontent.com/heroespatchnotes/heroes-patch-data/master/patchversions.json'
+    )
+    .then(response => {
+      if (!response.data) {
+        throw new Error('Unable to get patch data from Github');
+      }
+      return response.data;
+    })
+    .catch(e => console.error(e));
+
+  Promise.all([hotsDogBuilds, allBuilds])
+    .then(([hotsDogData, buildData]) => {
+      saveV1PatchData(JSON.parse(JSON.stringify(hotsDogData)), JSON.parse(JSON.stringify(buildData)));
+      saveV2PatchData(hotsDogData, buildData);
     })
     .catch(e => console.error(e));
 }
 
-module.exports = () => patchData;
+module.exports = {v1PatchData: () => patchDatav1, v2PatchData: () => patchDatav2};

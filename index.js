@@ -5,7 +5,7 @@ let shrinkRay = require('shrink-ray');
 
 // Data
 let rotationData = require('./services/rotation_service');
-let patchData = require('./services/patch_service');
+let {v1PatchData, v2PatchData} = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
 let tipData = require('./services/tips_service');
 let {
@@ -45,7 +45,11 @@ app.get('/v1/update/id', function (req, res) {
 });
 
 app.get('/v1/patches', function (req, res) {
-  res.send(patchData());
+  res.send(v1PatchData());
+});
+
+app.get('/v2/patches', function (req, res) {
+  res.send(v2PatchData());
 });
 
 app.get('/v1/hotslogs/:hero', function (req, res) {
