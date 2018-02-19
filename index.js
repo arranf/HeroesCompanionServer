@@ -7,7 +7,6 @@ let shrinkRay = require('shrink-ray');
 let rotationData = require('./services/rotation_service');
 let {v1PatchData, v2PatchData} = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
-let tipData = require('./services/tips_service');
 let {
   hotslogsWinRates,
   hotsLogBuilds
