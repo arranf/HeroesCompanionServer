@@ -31,8 +31,9 @@ function updateTips () {
 
 function getInitialTipData () {
   downloadFromS3(tipDataFileName)
-    .then(data => writeJSONFile(tipDataFileName, data, 
-      console.log('Got tips data from S3')))
+    .then(data =>
+      writeJSONFile(tipDataFileName, data, console.log('Got tips data from S3'))
+    )
     .then(data => {
       lastRead = Date.now();
       tipData = data;

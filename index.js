@@ -5,7 +5,7 @@ let shrinkRay = require('shrink-ray');
 
 // Data
 let rotationData = require('./services/rotation_service');
-let {v1PatchData, v2PatchData} = require('./services/patch_service');
+let { v1PatchData, v2PatchData } = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
 let {
   hotslogsWinRates,
@@ -67,7 +67,7 @@ app.get('/v1/hotslogs', function (req, res) {
 });
 
 app.get('/v1/builds/:hero', function (req, res) {
-  Build.find({HeroId: req.params.hero}, function(err, builds) {
+  Build.find({ HeroId: req.params.hero }, function (err, builds) {
     if (err) {
       res.send(err);
     }
@@ -77,16 +77,18 @@ app.get('/v1/builds/:hero', function (req, res) {
 
 app.post('/v1/builds', async function (req, res) {
   let newBuild = req.body;
-  if (!((newBuild.HeroName || newBuild.HeroId) && newBuild.Talents.length === 7)) {  
+  if (
+    !((newBuild.HeroName || newBuild.HeroId) && newBuild.Talents.length === 7)
+  ) {
     res.status(500).send('Requires: HeroName/HeroId and 7 Talents');
     return;
   }
 
   let hero;
   if (newBuild.HeroName) {
-    hero = await Hero.findOne({ 'Name': newBuild.HeroName }).exec(); 
+    hero = await Hero.findOne({ Name: newBuild.HeroName }).exec();
   } else {
-    hero = await Hero.findOne({'HeroId': newBuild.HeroId}).exec();
+    hero = await Hero.findOne({ HeroId: newBuild.HeroId }).exec();
   }
 
   let talentQueries = [];
@@ -96,9 +98,16 @@ app.post('/v1/builds', async function (req, res) {
       return;
     }
     if (talent.Name) {
-      talentQueries.push(Talent.findOne({'Name': talent.Name, 'HeroId': hero.HeroId}).exec());
+      talentQueries.push(
+        Talent.findOne({ Name: talent.Name, HeroId: hero.HeroId }).exec()
+      );
     } else {
-      talentQueries.push(Talent.findOne({'TalentTreeId': talent.TalentTreeId, 'HeroId': hero.HeroId}).exec());
+      talentQueries.push(
+        Talent.findOne({
+          TalentTreeId: talent.TalentTreeId,
+          HeroId: hero.HeroId
+        }).exec()
+      );
     }
   });
 
@@ -109,29 +118,47 @@ app.post('/v1/builds', async function (req, res) {
         return;
       }
 
-      let talents = results.map(r => ({Name: r.Name, TalentTreeId: r.TalentTreeId}));
+      let talents = results.map(r => ({
+        Name: r.Name,
+        TalentTreeId: r.TalentTreeId
+      }));
       // To make hash deterministic
       talents.sort((a, b) => {
         if (a.Name < b.Name) return -1;
         if (a.Name > b.Name) return 1;
         return 0;
       });
-      const md5 = crypto.createHash('md5').update(`${hero.HeroId}${talents.map(t => t.Name).join('')}`).digest('hex');
-      let build = new Build({ HeroId: hero.HeroId, Description: newBuild.Description, Talents: talents, Url: newBuild.Url, Md5: md5 });
+      const md5 = crypto
+        .createHash('md5')
+        .update(`${hero.HeroId}${talents.map(t => t.Name).join('')}`)
+        .digest('hex');
+      let build = new Build({
+        HeroId: hero.HeroId,
+        Description: newBuild.Description,
+        Talents: talents,
+        Url: newBuild.Url,
+        Md5: md5
+      });
       return build.save();
-  })
-  .then(data => {
-    res.status(200).send();
-  })
-  .catch((e) => {console.error(e); res.status(500).send('Error saving build. Likely duplicate.');});
+    })
+    .then(data => {
+      res.status(200).send();
+    })
+    .catch(e => {
+      console.error(e);
+      res.status(500).send('Error saving build. Likely duplicate.');
+    });
 });
 
 // Connect to DB
 let connection;
 if (process.env.NODE_ENV === 'production') {
   const connectionString = `mongodb://ds241548-a0.mlab.com:41548,ds241548-a1.mlab.com:41548/heroescompanion?replicaSet=rs-ds241548`;
-  connection = mongoose.connect(connectionString, {user: process.env.DB_USER, pass: process.env.DB_PASSWORD});
-}  else {
+  connection = mongoose.connect(connectionString, {
+    user: process.env.DB_USER,
+    pass: process.env.DB_PASSWORD
+  });
+} else {
   connection = mongoose.connect('mongodb://localhost:27017/heroescompanion');
 }
 
