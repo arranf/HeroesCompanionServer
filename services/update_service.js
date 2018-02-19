@@ -28,7 +28,7 @@ function getUpdateData () {
       lastRead = Date.now();
       updateData = response.data;
       updateId = updateData.id;
-      console.log(`Last read from file ${lastRead}`);
+      console.log(`Last read update from file ${lastRead}`);
       doSelfUpdate();
     })
     .catch(e => console.error(e));
