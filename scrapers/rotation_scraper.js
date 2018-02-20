@@ -46,7 +46,7 @@ function fetch() {
       }
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
-      if (end.getUTCMilliseconds() > Date.now()) {
+      if (end.getUTCMilliseconds() < Date.now()) {
         // Shit, the website isn't updated yet
         return fetchFromForum();
       } else {
