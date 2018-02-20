@@ -52,11 +52,13 @@ function fetch() {
       } else {
         // We can trust the website's data
         end.setHours(03);
-        data['time'] = new Date().toISOString();
-        data['start'] = start;
-        data['end'] = end;
-        data['heroes'].forEach(hero => {
-          hero['name'] = titleCase(hero['name']);
+        data.time = new Date().toISOString();
+        data.start = start;
+        data.end = end;
+
+        data.heroes = data.heroes.filter(h => h.isFreeToPlay)
+        data.heroes.forEach(hero => {
+          hero.name = titleCase(hero['name']);
         });
         return writeJSONFile('rotation_data.json', data, () =>
           console.log(`Rotation Data Saved ${new Date()}`)
