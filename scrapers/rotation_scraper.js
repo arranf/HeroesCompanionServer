@@ -46,7 +46,7 @@ function fetch() {
       }
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
-      if (end.getUTCMilliseconds() > Date.now()) {
+      if (end < new Date()) {
         // Shit, the website isn't updated yet
         return fetchFromForum();
       } else {
@@ -111,7 +111,7 @@ function fetchFromForum() {
       output.end.setMinutes(59);
       output.end.setSeconds(59);
       output['time'] = new Date().toISOString();
-      return writeJSONFile('rotation_data.json', data, () =>
+      return writeJSONFile('rotation_data.json', output, () =>
         console.log(`Rotation Data Saved ${new Date()}`)
       );
     })
