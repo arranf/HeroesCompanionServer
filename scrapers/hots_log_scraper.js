@@ -95,10 +95,14 @@ async function getHeroSpecificData (page, hero) {
       return hero;
     })
     .then(() => {
-      // Get hots.dog builds and match any missing talents to existing builds.
-      const currentPatch = v2PatchData().find(p => p.hotsDogId !== '');
+      // Goal: Get hots.dog builds 
+
+      // A patch that's at least 5 days old
+      const aWeekAgo = new Date();
+      aWeekAgo.setDate(aWeekAgo.getDate() - 5);
+      const currentPatch = v2PatchData().find(p => p.hotsDogId !== '' && new Date(p.liveDate) <= aWeekAgo);
+      
       // TODO Retry if fail
-      // TOODO Use a sensible patch, not the most recent
       return axios.get('https://hots.dog/api/get-build-winrates', {
         params: {
           build: currentPatch.hotsDogId,
@@ -107,6 +111,8 @@ async function getHeroSpecificData (page, hero) {
       })
     })
     .then((response) => {
+
+      // Goal fill in any missing hotslogs talents by using hotsdog builds.
       if (!response.data) {
         throw new Exception('Failure getting hots dog build');
       }
