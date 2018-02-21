@@ -54,9 +54,11 @@ function getInitialData () {
 }
 
 function hotsLogBuilds (heroName) {
-  let hero = hotsLogData.find(h => h.name === heroName);
-  if (hero) {
-    return hero.builds;
+  if (Array.isArray(hotsLogData)) {
+    let hero = hotsLogData.find(h => h.name === heroName);
+    if (hero) {
+      return hero.builds;
+    }
   }
   return null;
 }
