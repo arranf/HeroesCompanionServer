@@ -99,8 +99,13 @@ async function getHeroSpecificData (page, hero) {
       const currentPatch = v2PatchData().find(p => p.hotsDogId !== '');
       // TODO Retry if fail
       // TOODO Use a sensible patch, not the most recent
-      return axios.get(`https://hots.dog/api/get-build-winrates?hero=${hero.name}&build=${currentPatch.hotsDogId}`);
+      return axios.get('https://hots.dog/api/get-build-winrates', {
+        params: {
+          build: currentPatch.hotsDogId,
+          hero: hero.name
+        }
       })
+    })
     .then((response) => {
       if (!response.data) {
         throw new Exception('Failure getting hots dog build');
