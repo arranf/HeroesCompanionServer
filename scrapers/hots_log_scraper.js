@@ -48,6 +48,11 @@ async function scrapeHeroPage (html) {
             name: {
               attr: 'alt',
               convert: x => x.substr(0, x.indexOf(': '))
+            },
+            level: {
+              attr: 'id',
+              // 9 is the length of 'imgTalent'
+              convert: x => parseInt(x.substr(x.indexOf('imgTalent')+9), 10)
             }
           }
         }
