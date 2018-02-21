@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const scrapeIt = require('scrape-it');
 const { writeJSONFile } = require('../services/file_service');
+const {v2PatchData} = require('../services/patch_service');
+let axios = require('axios');
 
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html, {
@@ -61,13 +63,63 @@ async function scrapeHeroPage (html) {
   });
 }
 
+
+/**
+ * Scrape's the hero's hotslogs specific page and combines the data with the hero object and fills missing talents in builds with hots.dog data
+ * 
+ * @param {any} page A Puppeteer page
+ * @param {any} hero The Hero containing the page to visit
+ * @returns 
+ */
 async function getHeroSpecificData (page, hero) {
+  const levelIndexMap = {1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6};
   await page.goto('https://www.hotslogs.com/' + hero.link, { timeout: 0 });
   const html = await page.$eval('html', html => html.innerHTML);
   return scrapeHeroPage(html)
     .then(async data => {
       Object.assign(hero, data);
       await page.close();
+      return hero;
+    })
+    .then(() => {
+      // Get hots.dog builds and match any missing talents to existing builds.
+      const currentPatch = v2PatchData().find(p => p.hotsDogId !== '');
+      // TODO Retry if fail
+      // TOODO Use a sensible patch, not the most recent
+      return axios.get(`https://hots.dog/api/get-build-winrates?hero=${hero.name}&build=${currentPatch.hotsDogId}`);
+      })
+    .then((response) => {
+      if (!response.data) {
+        throw new Exception('Failure getting hots dog build');
+      }
+
+      let hotsDogBuilds = [];
+      
+      response.data.PopularBuilds.forEach(b => {
+        hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
+      });
+
+      response.data.WinningBuilds.forEach(b => {
+        hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
+      });
+
+      hero.builds.forEach(hotsLogBuild => {
+        const haveTalentLevels = hotsLogBuild.talents.map(t => t.level);
+        const missingTalents = Object.keys(levelIndexMap).filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0 ); 
+        const talentNames = hotsLogBuild.talents.map(t => t.name);
+        for (let i = 0; i < hotsDogBuilds.length; i++) {
+          let hotsDogBuild = hotsDogBuilds[i];
+          if (talentNames.every(name => hotsDogBuild.indexOf(name) >= 0)) {
+            // We have a match!
+            missingTalents.forEach(level => {
+              const name = hotsDogBuild[levelIndexMap[level]];
+              hotsLogBuild.talents.push(({'name': name, 'level': level}));
+            });
+            break;
+          }
+        }
+      });
+      return hero;
     })
     .catch(e => console.error(e));
 }
