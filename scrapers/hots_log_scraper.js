@@ -113,17 +113,25 @@ async function getHeroSpecificData (page, hero) {
 
       let hotsDogBuilds = [];
       
-      response.data.PopularBuilds.forEach(b => {
-        hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
-      });
-
-      response.data.WinningBuilds.forEach(b => {
-        hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
-      });
+      if (response.data.PopularBuilds) {
+        response.data.PopularBuilds.forEach(b => {
+          if (b.Build.length === 7) {
+            hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
+          }
+        });
+      }
+      
+      if (response.data.WinningBuilds) {
+        response.data.WinningBuilds.forEach(b => {
+          if (b.Build.length === 7) {
+            hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
+          }
+        });
+      }
 
       hero.builds.forEach(hotsLogBuild => {
         const haveTalentLevels = hotsLogBuild.talents.map(t => t.level);
-        const missingTalents = Object.keys(levelIndexMap).filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0 ); 
+        const missingTalents = Object.keys(levelIndexMap).filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0 ).map(x => parseInt(x, 10)); 
         const talentNames = hotsLogBuild.talents.map(t => t.name);
         for (let i = 0; i < hotsDogBuilds.length; i++) {
           let hotsDogBuild = hotsDogBuilds[i];
@@ -131,12 +139,22 @@ async function getHeroSpecificData (page, hero) {
             // We have a match!
             missingTalents.forEach(level => {
               const name = hotsDogBuild[levelIndexMap[level]];
+              // parseInt to produce a number not a string
               hotsLogBuild.talents.push(({'name': name, 'level': level}));
             });
             break;
+          } else if (missingTalents.length === 1 && missingTalents[0] === 20 && i === hotsDogBuild.length - 1) {
+            // We weren't going to match this but we can guess a level 20 talent here
+            let level10 = hotsLogBuild.talents.find(a => a.level === 10);
+            let matchingLevel10Build = hotsDogBuilds.find(a => a.find(b => b.indexOf(level10.name) >= 0))
+            if (matchingLevel10Build) {
+              let level20TalentName = matchingLevel10Build[levelIndexMap[20]];
+              hotsLogBuild.talents.push({'name': level20TalentName, 'level': 20})
+            }
           }
         }
       });
+      hero.builds = hero.builds.filter(b => b.talents.length === 7);
       return hero;
     })
     .catch(e => console.error(e));
@@ -154,10 +172,12 @@ async function fetch () {
     for (let i = 0; i < 10; i++) {
       let hero = heroesData.heroes[heroIndex];
       heroIndex++;
+      
       if (!hero) {
         console.error('Skipping malformed hero?');
         continue;
       }
+
       if (isDebug) {
         console.log(`Visiting ${hero.name}`);
       }
@@ -167,7 +187,7 @@ async function fetch () {
     await Promise.all(promises).catch(e => console.error(e));
   }
   await browser.close();
-  return writeJSONFile('hots_log.json', heroesData);
+  return writeJSONFile('hots_log.json', heroesData, () => console.log('Written hotslogs.com data to file'));
 }
 
 module.exports = fetch;
