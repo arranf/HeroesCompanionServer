@@ -4,6 +4,12 @@ const { writeJSONFile } = require('../services/file_service');
 const {v2PatchData} = require('../services/patch_service');
 let axios = require('axios');
 
+/**
+ * Scrapes the name, number of games played, popularity, win percentage, and a link to the hero's detail page from the hotslogs.com homepage
+ * 
+ * @param {String} html The HTML for the hotslog.com homepage
+ * @returns {Promise} An array containing an array of hero objects {name, played, popularity, winPercentage, link} 
+ */
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html, {
     heroes: {
@@ -31,6 +37,13 @@ async function fetchAllHeroWinRates (html) {
   });
 }
 
+
+/**
+ * Scrapes the hero page 
+ * 
+ * @param {String} html The hero page's html
+ * @returns {Promise} which resolves to an object with a build array, each of which contains an object {gamesPlayed, winPercentage, talents {name, level}}
+ */
 async function scrapeHeroPage (html) {
   return scrapeIt.scrapeHTML(html, {
     builds: {
