@@ -1,10 +1,10 @@
 const puppeteer = require('puppeteer');
 const scrapeIt = require('scrape-it');
 const { writeJSONFile } = require('../services/file_service');
-const {v2PatchData} = require('../services/patch_service');
+const { v2PatchData } = require('../services/patch_service');
 let axios = require('axios');
 
-function getDate2DaysAgo() {
+function getDate2DaysAgo () {
   const twoDaysAgo = new Date();
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
   return twoDaysAgo;
@@ -12,9 +12,9 @@ function getDate2DaysAgo() {
 
 /**
  * Scrapes the name, number of games played, popularity, win percentage, and a link to the hero's detail page from the hotslogs.com homepage
- * 
+ *
  * @param {String} html The HTML for the hotslog.com homepage
- * @returns {Promise} An array containing an array of hero objects {name, played, popularity, winPercentage, link} 
+ * @returns {Promise} An array containing an array of hero objects {name, played, popularity, winPercentage, link}
  */
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html, {
@@ -43,10 +43,9 @@ async function fetchAllHeroWinRates (html) {
   });
 }
 
-
 /**
- * Scrapes the hero page 
- * 
+ * Scrapes the hero page
+ *
  * @param {String} html The hero page's html
  * @returns {Promise} which resolves to an object with a build array, each of which contains an object {gamesPlayed, winPercentage, talents {name, level}}
  */
@@ -73,7 +72,7 @@ async function scrapeHeroPage (html) {
             level: {
               attr: 'id',
               // 9 is the length of 'imgTalent'
-              convert: x => parseInt(x.substr(x.indexOf('imgTalent')+9), 10)
+              convert: x => parseInt(x.substr(x.indexOf('imgTalent') + 9), 10)
             }
           }
         }
@@ -82,16 +81,15 @@ async function scrapeHeroPage (html) {
   });
 }
 
-
 /**
  * Scrape's the hero's hotslogs specific page and combines the data with the hero object and fills missing talents in builds with hots.dog data
- * 
+ *
  * @param {any} page A Puppeteer page
  * @param {any} hero The Hero containing the page to visit
- * @returns 
+ * @returns
  */
 async function getHeroSpecificData (page, hero) {
-  const levelIndexMap = {1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6};
+  const levelIndexMap = { 1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6 };
   await page.goto('https://www.hotslogs.com/' + hero.link, { timeout: 0 });
   const html = await page.$eval('html', html => html.innerHTML);
   return scrapeHeroPage(html)
@@ -101,30 +99,31 @@ async function getHeroSpecificData (page, hero) {
       return hero;
     })
     .then(() => {
-      // Goal: Get hots.dog builds 
+      // Goal: Get hots.dog builds
 
       // A patch that's at least 5 days old
       const aWeekAgo = new Date();
       aWeekAgo.setDate(aWeekAgo.getDate() - 5);
-      const currentPatch = v2PatchData().find(p => p.hotsDogId !== '' && new Date(p.liveDate) <= aWeekAgo);
-      
+      const currentPatch = v2PatchData().find(
+        p => p.hotsDogId !== '' && new Date(p.liveDate) <= aWeekAgo
+      );
+
       // TODO Retry if fail
       return axios.get('https://hots.dog/api/get-build-winrates', {
         params: {
           build: currentPatch.hotsDogId,
           hero: hero.name
         }
-      })
+      });
     })
-    .then((response) => {
-
+    .then(response => {
       // Goal fill in any missing hotslogs talents by using hotsdog builds.
       if (!response.data) {
         throw new Exception('Failure getting hots dog build');
       }
 
       let hotsDogBuilds = [];
-      
+
       if (response.data.PopularBuilds) {
         response.data.PopularBuilds.forEach(b => {
           if (b.Build.length === 7) {
@@ -132,7 +131,7 @@ async function getHeroSpecificData (page, hero) {
           }
         });
       }
-      
+
       if (response.data.WinningBuilds) {
         response.data.WinningBuilds.forEach(b => {
           if (b.Build.length === 7) {
@@ -143,7 +142,9 @@ async function getHeroSpecificData (page, hero) {
 
       hero.builds.forEach(hotsLogBuild => {
         const haveTalentLevels = hotsLogBuild.talents.map(t => t.level);
-        const missingTalents = Object.keys(levelIndexMap).filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0 ).map(x => parseInt(x, 10)); 
+        const missingTalents = Object.keys(levelIndexMap)
+          .filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0)
+          .map(x => parseInt(x, 10));
         const talentNames = hotsLogBuild.talents.map(t => t.name);
         for (let i = 0; i < hotsDogBuilds.length; i++) {
           let hotsDogBuild = hotsDogBuilds[i];
@@ -152,19 +153,25 @@ async function getHeroSpecificData (page, hero) {
             missingTalents.forEach(level => {
               const name = hotsDogBuild[levelIndexMap[level]];
               // parseInt to produce a number not a string
-              hotsLogBuild.talents.push(({'name': name, 'level': level}));
+              hotsLogBuild.talents.push({ name: name, level: level });
             });
             break;
-          } else if (missingTalents.length === 1 && missingTalents[0] === 20 && i === hotsDogBuild.length - 1) {
+          } else if (
+            missingTalents.length === 1 &&
+            missingTalents[0] === 20 &&
+            i === hotsDogBuild.length - 1
+          ) {
             // We weren't going to match this but we can guess a level 20 talent here
             let level10 = hotsLogBuild.talents.find(a => a.level === 10);
-            let matchingLevel10Build = hotsDogBuilds.find(a => a.find(b => b.indexOf(level10.name) >= 0))
+            let matchingLevel10Build = hotsDogBuilds.find(a =>
+              a.find(b => b.indexOf(level10.name) >= 0)
+            );
             if (matchingLevel10Build) {
               let level20TalentName = matchingLevel10Build[levelIndexMap[20]];
-              hotsLogBuild.talents.push({'name': level20TalentName, 'level': 20})
+              hotsLogBuild.talents.push({ name: level20TalentName, level: 20 });
             }
           }
-      }
+        }
       });
       hero.builds = hero.builds.filter(b => b.talents.length === 7);
       return hero;
@@ -182,7 +189,7 @@ async function fetch (previousData) {
   await page.close();
 
   // Identify patch
-  heroesData.heroes[0]
+  heroesData.heroes[0];
 
   //
   const promises = [];
@@ -190,7 +197,7 @@ async function fetch (previousData) {
     for (let i = 0; i < 10; i++) {
       let hero = heroesData.heroes[heroIndex];
       heroIndex++;
-      
+
       if (!hero) {
         console.error('Skipping malformed hero?');
         continue;
@@ -209,11 +216,11 @@ async function fetch (previousData) {
   // Find out if a significant number of heroes have less builds - a new patch indicator
   let numberOfHeroesWithLessBuilds = 0;
   let newPatch = false;
-  for (let i = 0; i < heroesData.heroes.length; i ++) {
+  for (let i = 0; i < heroesData.heroes.length; i++) {
     let hero = heroesData.heroes[i];
     let previousDataHero = previousData.find(h => h.name === hero.name);
     if (hero.builds.length < previousDataHero.builds) {
-      numberOfHeroesWithLessBuilds++
+      numberOfHeroesWithLessBuilds++;
     }
 
     if (numberOfHeroesWithLessBuilds >= previousDataHero.length * 0.2) {
@@ -221,7 +228,7 @@ async function fetch (previousData) {
       break;
     }
   }
-  
+
   let patch = null;
   const twoDaysAgo = getDate2DaysAgo();
   let patches = v2PatchData();
@@ -235,9 +242,9 @@ async function fetch (previousData) {
     return;
   }
 
-
-  return writeJSONFile(`hots_log_${patch.fullVersion}.json`, heroesData, () => console.log('Written hotslogs.com data to file'))
-    .then(() => patch.fullVersion);
+  return writeJSONFile(`hots_log_${patch.fullVersion}.json`, heroesData, () =>
+    console.log('Written hotslogs.com data to file')
+  ).then(() => patch.fullVersion);
 }
 
 module.exports = fetch;

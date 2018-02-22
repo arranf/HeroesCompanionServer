@@ -56,7 +56,7 @@ function fetch() {
         data.start = start;
         data.end = end;
 
-        data.heroes = data.heroes.filter(h => h.isFreeToPlay)
+        data.heroes = data.heroes.filter(h => h.isFreeToPlay);
         data.heroes.forEach(hero => {
           hero.name = titleCase(hero['name']);
         });

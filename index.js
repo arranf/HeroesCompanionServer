@@ -53,7 +53,7 @@ app.get('/v2/patches', function (req, res) {
 
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
-  const patchNumber = req.query['patch']
+  const patchNumber = req.query['patch'];
   let data = hotsLogBuilds(heroName, patchNumber);
   if (data) {
     res.send(data);
@@ -115,13 +115,15 @@ app.post('/v1/builds', async function (req, res) {
   Promise.all(talentQueries)
     .then(results => {
       let feedback = [];
-      for (let i = 0; i < results.length; i ++) {
+      for (let i = 0; i < results.length; i++) {
         if (!results[i]) {
           let sentItem = newBuild.Talents[i];
           if (sentItem.Name) {
-            feedback.push(`${sentItem.Name} is not a valid talent name`)
+            feedback.push(`${sentItem.Name} is not a valid talent name`);
           } else {
-            feedback.push(`${sentItem.TalentTreeId} is not a valid talent TalentTreeId`)
+            feedback.push(
+              `${sentItem.TalentTreeId} is not a valid talent TalentTreeId`
+            );
           }
         }
       }
@@ -133,7 +135,7 @@ app.post('/v1/builds', async function (req, res) {
       let talents = results.map(r => ({
         Name: r.Name,
         TalentTreeId: r.TalentTreeId,
-        Level: r.Level,
+        Level: r.Level
       }));
       // To make hash deterministic
       talents.sort((a, b) => {
