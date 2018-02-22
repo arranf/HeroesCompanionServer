@@ -120,7 +120,8 @@ app.post('/v1/builds', async function (req, res) {
 
       let talents = results.map(r => ({
         Name: r.Name,
-        TalentTreeId: r.TalentTreeId
+        TalentTreeId: r.TalentTreeId,
+        Level: r.Level,
       }));
       // To make hash deterministic
       talents.sort((a, b) => {
