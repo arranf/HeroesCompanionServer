@@ -95,7 +95,7 @@ app.post('/v1/builds', async function (req, res) {
   let talentQueries = [];
   newBuild.Talents.forEach(talent => {
     if (!(talent.Name || talent.TalentTreeId)) {
-      res.status(500).send('Invalid talent');
+      res.status(500).send('Each talent must have a TalentTreeId or a Name');
       return;
     }
     if (talent.Name) {
@@ -114,8 +114,19 @@ app.post('/v1/builds', async function (req, res) {
 
   Promise.all(talentQueries)
     .then(results => {
-      if (results.includes(null)) {
-        res.status(500).send('Invalid talent');
+      let feedback = [];
+      for (let i = 0; i < results.length; i ++) {
+        if (!results[i]) {
+          let sentItem = newBuild.Talents[i];
+          if (sentItem.Name) {
+            feedback.push(`${sentItem.Name} is not a valid talent name`)
+          } else {
+            feedback.push(`${sentItem.TalentTreeId} is not a valid talent TalentTreeId`)
+          }
+        }
+      }
+      if (feedback.length > 0) {
+        res.status(500).send(feedback.join(','));
         return;
       }
 
