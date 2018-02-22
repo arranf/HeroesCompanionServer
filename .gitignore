@@ -60,7 +60,7 @@ typings/
 logs\.txt
 config.json
 
-hots_log\.json
+hots_log*\.json
 
 tips_data\.json
 
