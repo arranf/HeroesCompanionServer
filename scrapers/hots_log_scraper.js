@@ -4,6 +4,12 @@ const { writeJSONFile } = require('../services/file_service');
 const {v2PatchData} = require('../services/patch_service');
 let axios = require('axios');
 
+function getDate2DaysAgo() {
+  const twoDaysAgo = new Date();
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+  return twoDaysAgo;
+}
+
 /**
  * Scrapes the name, number of games played, popularity, win percentage, and a link to the hero's detail page from the hotslogs.com homepage
  * 
@@ -158,7 +164,7 @@ async function getHeroSpecificData (page, hero) {
               hotsLogBuild.talents.push({'name': level20TalentName, 'level': 20})
             }
           }
-        }
+      }
       });
       hero.builds = hero.builds.filter(b => b.talents.length === 7);
       return hero;
@@ -166,13 +172,19 @@ async function getHeroSpecificData (page, hero) {
     .catch(e => console.error(e));
 }
 
-async function fetch () {
+async function fetch (previousData) {
   const isDebug = process.env.NODE_ENV !== 'production';
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://www.hotslogs.com/Default');
   const html = await page.$eval('html', html => html.innerHTML);
   const heroesData = await fetchAllHeroWinRates(html);
+  await page.close();
+
+  // Identify patch
+  heroesData.heroes[0]
+
+  //
   const promises = [];
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
     for (let i = 0; i < 10; i++) {
@@ -193,7 +205,39 @@ async function fetch () {
     await Promise.all(promises).catch(e => console.error(e));
   }
   await browser.close();
-  return writeJSONFile('hots_log.json', heroesData, () => console.log('Written hotslogs.com data to file'));
+
+  // Find out if a significant number of heroes have less builds - a new patch indicator
+  let numberOfHeroesWithLessBuilds = 0;
+  let newPatch = false;
+  for (let i = 0; i < heroesData.heroes.length; i ++) {
+    let hero = heroesData.heroes[i];
+    let previousDataHero = previousData.find(h => h.name === hero.name);
+    if (hero.builds.length < previousDataHero.builds) {
+      numberOfHeroesWithLessBuilds++
+    }
+
+    if (numberOfHeroesWithLessBuilds >= previousDataHero.length * 0.2) {
+      newPatch = true;
+      break;
+    }
+  }
+  
+  let patch = null;
+  const twoDaysAgo = getDate2DaysAgo();
+  let patches = v2PatchData();
+  if (newPatch) {
+    patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
+  } else {
+    patch = patches.find(p => new Date(p.liveDate) > twoDaysAgo);
+  }
+
+  if (patch == null) {
+    return;
+  }
+
+
+  return writeJSONFile(`hots_log_${patch.fullVersion}.json`, heroesData, () => console.log('Written hotslogs.com data to file'))
+    .then(() => patch.fullVersion);
 }
 
 module.exports = fetch;

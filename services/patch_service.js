@@ -74,6 +74,7 @@ function saveV2PatchData (hotsDogData, buildData) {
     }-${patchNotesBuild.patchType.toLowerCase().replace(' ', '-')}.html`;
     if (hotsDogBuild) {
       patchNotesBuild['hotsDogId'] = hotsDogBuild.ID;
+      patchNotesBuild['finish'] = hotsDogBuild.Finish;
     }
     delete patchNotesBuild['internalId'];
     delete patchNotesBuild['liveBuild'];

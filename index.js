@@ -53,7 +53,8 @@ app.get('/v2/patches', function (req, res) {
 
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
-  let data = hotsLogBuilds(heroName);
+  const patchNumber = req.query['patch']
+  let data = hotsLogBuilds(heroName, patchNumber);
   if (data) {
     res.send(data);
   } else {
