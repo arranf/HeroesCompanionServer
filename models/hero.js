@@ -10,7 +10,8 @@ let heroSchema = new Schema({
   Role: String,
   Type: String,
   ReleaseDate: String,
-  Sha3256: String
+  Sha3256: String,
+  __v: { type: Number, select: false},
 });
 
 module.exports = mongoose.model('heroes', heroSchema);
