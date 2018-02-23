@@ -181,7 +181,7 @@ async function getHeroSpecificData (page, hero) {
 
 async function fetch (previousData) {
   const isDebug = process.env.NODE_ENV !== 'production';
-  const browser = await puppeteer.launch({headless: false,  slowMo: 100});
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
