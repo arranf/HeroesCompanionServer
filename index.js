@@ -159,6 +159,7 @@ app.post('/v1/builds', async function (req, res) {
         Description: newBuild.Description,
         Talents: talents,
         Url: newBuild.Url,
+        Source: newBuild.Source,
         Md5: md5
       });
       return build.save();
@@ -168,7 +169,11 @@ app.post('/v1/builds', async function (req, res) {
     })
     .catch(e => {
       console.error(e);
-      res.status(500).send('Error saving build. Likely duplicate.');
+      if (e.message) {
+        res.status(500).send(e.message);
+      } else {
+        res.status(500).send('Error saving build.');
+      }
     });
 });
 
