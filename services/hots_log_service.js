@@ -127,4 +127,4 @@ function _hotsLogBuilds (heroName, patchNumber) {
   return null;
 }
 
-module.exports = { hotsLogsWinRates: _getHotsLogWinrates, hotsLogBuilds: () => _hotsLogBuilds };
+module.exports = { hotsLogsWinRates: _getHotsLogWinrates, hotsLogBuilds:  _hotsLogBuilds };
