@@ -12,9 +12,17 @@ const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
 
-setTimeout(() => _getInitialData().then(() => _updateHotslogData()), 3000);
+setTimeout(() => _getInitialData(), 3000);
 let cron = require('node-cron');
-cron.schedule('13 8 * * *', () => _updateHotslogData().catch( e => {console.error('Error scraping hotslogs'); console.error(e)}), false);
+cron.schedule(
+  '13 8 * * *',
+  () =>
+    _updateHotslogData().catch(e => {
+      console.error('Error scraping hotslogs');
+      console.error(e);
+    }),
+  false
+);
 
 function _buildPatchFileName (patchNumber) {
   return `${_hotsLogFileName}_${patchNumber}.json`;
@@ -38,8 +46,15 @@ function _generateData (data, patchNumber) {
 
 function _updateHotslogData () {
   let fileName = '';
-  let currentPatchNumber = compare.max(Object.keys(_hotsLogData).map( a => {let index = a.lastIndexOf('.'); return a.slice(0, index);}));
-  currentPatchNumber = Object.keys(_hotsLogData).find(a => a.includes(currentPatchNumber));
+  let currentPatchNumber = compare.max(
+    Object.keys(_hotsLogData).map(a => {
+      let index = a.lastIndexOf('.');
+      return a.slice(0, index);
+    })
+  );
+  currentPatchNumber = Object.keys(_hotsLogData).find(a =>
+    a.includes(currentPatchNumber)
+  );
 
   let thisPatchNumber;
   fetchHotsLogsData(_hotsLogData[currentPatchNumber], currentPatchNumber)
@@ -52,13 +67,14 @@ function _updateHotslogData () {
       _generateData(JSON.parse(data), thisPatchNumber);
       return uploadtoS3(fileName);
     })
-    .catch( e => console.error(e));
+    .catch(e => console.error(e));
 }
 
 function _getStoredS3Data (patch) {
   const fileName = _buildPatchFileName(patch.fullVersion);
   return downloadFromS3(fileName)
-    .then(data => writeJSONFile(fileName, data, () =>
+    .then(data =>
+      writeJSONFile(fileName, data, () =>
         console.log(`Got hots log data from S3 for patch ${patch.fullVersion}`)
       )
     )

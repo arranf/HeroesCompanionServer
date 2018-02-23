@@ -186,15 +186,22 @@ async function fetch (previousData) {
   await page.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
   await page.waitFor(500);
-  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label');
+  await page.click(
+    '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
+  );
   await page.waitFor(500);
   await page.click('footer');
   await page.waitFor(3000);
-  const isFilteredCorrect = await page.$eval('#ctl00_MainContent_ComboBoxReplayDateTime_Input', input => input.getAttribute('value').includes('Current') );
+  const isFilteredCorrect = await page.$eval(
+    '#ctl00_MainContent_ComboBoxReplayDateTime_Input',
+    input => input.getAttribute('value').includes('Current')
+  );
   if (!isFilteredCorrect) {
-    throw new Exception('Failed to set hotlsogs filters correctly in puppeteer');
+    throw new Exception(
+      'Failed to set hotlsogs filters correctly in puppeteer'
+    );
   }
-  
+
   const html = await page.$eval('html', html => html.innerHTML);
   const heroesData = await fetchAllHeroWinRates(html);
   await page.close();
@@ -255,9 +262,12 @@ async function fetch (previousData) {
 
   const fileName = `hots_log_${patch.fullVersion}.json`;
   return writeJSONFile(fileName, heroesData, () =>
-    console.log(`${newPatch? 'New Patch!' : ''} Written hotslogs.com data to ${fileName}`)
-  ).then(() => patch.fullVersion)
-  .catch((e) => console.error(e));
+    console.log(
+      `${newPatch ? 'New Patch!' : ''} Written hotslogs.com data to ${fileName}`
+    )
+  )
+    .then(() => patch.fullVersion)
+    .catch(e => console.error(e));
 }
 
 module.exports = fetch;

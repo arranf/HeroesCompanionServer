@@ -53,7 +53,7 @@ function downloadFromS3 (filePath) {
         throw new Error('Unable to get ' + filePath);
       }
       return response.data;
-    })
+    });
 }
 
 module.exports = { downloadFromS3, uploadtoS3 };
