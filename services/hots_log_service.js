@@ -12,52 +12,57 @@ const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
 
-setTimeout(() => _getInitialData(), 3000);
+setTimeout(() => _getInitialData().then(() => _updateHotslogData()), 3000);
 let cron = require('node-cron');
-cron.schedule('13 8 * * *', () => _updateHotslogData(), false);
+cron.schedule('13 8 * * *', () => _updateHotslogData().catch( e => {console.error('Error scraping hotslogs'); console.error(e)}), false);
 
 function _buildPatchFileName (patchNumber) {
   return `${_hotsLogFileName}_${patchNumber}.json`;
 }
 
 function _generateData (data, patchNumber) {
-  if (data) {
-    _lastRead = Date.now();
-    _hotsLogData[patchNumber] = data.heroes;
-    let wr = JSON.parse(JSON.stringify(data.heroes));
-    wr.forEach(hero => {
-      delete hero.builds;
-    });
-    hotsLogWinrates = wr;
-    console.log(`Last read hots_log from file ${_lastRead}`);
-  }
+  return new Promise(function (resolve, reject) {
+    if (data) {
+      _lastRead = Date.now();
+      _hotsLogData[patchNumber] = data.heroes;
+      let wr = JSON.parse(JSON.stringify(data.heroes));
+      wr.forEach(hero => {
+        delete hero.builds;
+      });
+      hotsLogWinrates = wr;
+      console.log(`Last read hots_log from file ${_lastRead}`);
+      resolve();
+    }
+  });
 }
 
 function _updateHotslogData () {
   let fileName = '';
-  let currentPatchNumber = compare.max(Object.keys(_hotsLogData));
+  let currentPatchNumber = compare.max(Object.keys(_hotsLogData).map( a => {let index = a.lastIndexOf('.'); return a.slice(0, index);}));
+  currentPatchNumber = Object.keys(_hotsLogData).find(a => a.includes(currentPatchNumber));
+
+  let thisPatchNumber;
   fetchHotsLogsData(_hotsLogData[currentPatchNumber], currentPatchNumber)
     .then(fullVersion => {
+      thisPatchNumber = fullVersion;
       fileName = _buildPatchFileName(fullVersion);
       return readFile(fileName);
     })
     .then(data => {
-      _generateData(JSON.parse(data));
+      _generateData(JSON.parse(data), thisPatchNumber);
       return uploadtoS3(fileName);
-    });
+    })
+    .catch( e => console.error(e));
 }
 
 function _getStoredS3Data (patch) {
   const fileName = _buildPatchFileName(patch.fullVersion);
   return downloadFromS3(fileName)
-    .then(data =>
-      writeJSONFile(fileName, data, () =>
+    .then(data => writeJSONFile(fileName, data, () =>
         console.log(`Got hots log data from S3 for patch ${patch.fullVersion}`)
       )
     )
-    .then(data => {
-      _generateData(data, patch.fullVersion);
-    })
+    .then(data => _generateData(data, patch.fullVersion))
     .catch(error =>
       console.error(
         `Failed to get hotslog data from S3 for patch ${patch.fullVersion}`

@@ -185,10 +185,16 @@ async function fetch (previousData) {
   const page = await browser.newPage();
   await page.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
-  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'),
-  await page.click('body')
+  await page.waitFor(500);
+  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label');
+  await page.waitFor(500);
+  await page.click('footer');
   await page.waitFor(3000);
-
+  const isFilteredCorrect = await page.$eval('#ctl00_MainContent_ComboBoxReplayDateTime_Input', input => input.getAttribute('value').includes('Current') );
+  if (!isFilteredCorrect) {
+    throw new Exception('Failed to set hotlsogs filters correctly in puppeteer');
+  }
+  
   const html = await page.$eval('html', html => html.innerHTML);
   const heroesData = await fetchAllHeroWinRates(html);
   await page.close();
@@ -238,18 +244,20 @@ async function fetch (previousData) {
   const twoDaysAgo = getDate2DaysAgo();
   let patches = v2PatchData();
   if (newPatch) {
-    patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
-  } else {
     patch = patches.find(p => new Date(p.liveDate) > twoDaysAgo);
+  } else {
+    patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
   }
 
   if (patch == null) {
     return;
   }
 
-  return writeJSONFile(`hots_log_${patch.fullVersion}.json`, heroesData, () =>
-    console.log('Written hotslogs.com data to file')
-  ).then(() => patch.fullVersion);
+  const fileName = `hots_log_${patch.fullVersion}.json`;
+  return writeJSONFile(fileName, heroesData, () =>
+    console.log(`${newPatch? 'New Patch!' : ''} Written hotslogs.com data to ${fileName}`)
+  ).then(() => patch.fullVersion)
+  .catch((e) => console.error(e));
 }
 
 module.exports = fetch;
