@@ -19,7 +19,7 @@ function getDate2DaysAgo () {
 async function fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html, {
     heroes: {
-      listItem: '#DataTables_Table_0 > tbody > tr',
+      listItem: '.rgMasterTable > tbody > tr',
       data: {
         name: 'td:nth-child(2)',
         played: {
@@ -181,9 +181,14 @@ async function getHeroSpecificData (page, hero) {
 
 async function fetch (previousData) {
   const isDebug = process.env.NODE_ENV !== 'production';
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({headless: false,  slowMo: 100});
   const page = await browser.newPage();
-  await page.goto('https://www.hotslogs.com/Default');
+  await page.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
+  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
+  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'),
+  await page.click('body')
+  await page.waitFor(3000);
+
   const html = await page.$eval('html', html => html.innerHTML);
   const heroesData = await fetchAllHeroWinRates(html);
   await page.close();
