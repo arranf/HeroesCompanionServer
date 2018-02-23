@@ -54,7 +54,6 @@ function downloadFromS3 (filePath) {
       }
       return response.data;
     })
-    .catch(e => console.error(e));
 }
 
 module.exports = { downloadFromS3, uploadtoS3 };
