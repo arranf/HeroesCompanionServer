@@ -5,7 +5,7 @@ const { v2PatchData } = require('../services/patch_service');
 let compare = require('compare-semver');
 
 let _hotsLogData = {};
-let hotsLogWinrates = {};
+let _hotsLogWinrates = {};
 let _lastRead;
 
 const _hotsLogFileName = 'hots_log';
@@ -37,7 +37,7 @@ function _generateData (data, patchNumber) {
       wr.forEach(hero => {
         delete hero.builds;
       });
-      hotsLogWinrates = wr;
+      _hotsLogWinrates[patchNumber] = wr;
       console.log(`Last read hots_log from file ${_lastRead}`);
       resolve();
     }
@@ -96,15 +96,23 @@ function _getInitialData () {
   return Promise.all(promises);
 }
 
-function hotsLogBuilds (heroName, patchNumber) {
-  let patch;
+function _getHotsLogWinrates (patchNumber) {
   if (!patchNumber) {
-    // A patch that's at least 5 days old
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-    patchNumber = v2PatchData().find(
-      p => p.hotsDogId !== '' && new Date(p.liveDate) <= fiveDaysAgo
-    ).fullVersion;
+    patchNumber = _getPatchNumber();
+  }
+  return _hotsLogWinrates[patchNumber];
+}
+
+function _getPatchNumber() {
+  // A patch that's at least 5 days old
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  return v2PatchData().find(p => p.hotsDogId !== '' && new Date(p.liveDate) <= fiveDaysAgo).fullVersion;
+}
+
+function _hotsLogBuilds (heroName, patchNumber) {
+  if (!patchNumber) {
+    patchNumber = _getPatchNumber();
   }
 
   let data = _hotsLogData[patchNumber];
@@ -119,4 +127,4 @@ function hotsLogBuilds (heroName, patchNumber) {
   return null;
 }
 
-module.exports = { hotslogsWinRates: () => hotsLogWinrates, hotsLogBuilds };
+module.exports = { hotsLogsWinRates: _getHotsLogWinrates, hotsLogBuilds: () => _hotsLogBuilds };

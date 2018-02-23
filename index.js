@@ -8,7 +8,7 @@ let rotationData = require('./services/rotation_service');
 let { v1PatchData, v2PatchData } = require('./services/patch_service');
 let { updateData, updateId } = require('./services/update_service');
 let {
-  hotslogsWinRates,
+  hotsLogsWinRates,
   hotsLogBuilds
 } = require('./services/hots_log_service');
 
@@ -64,7 +64,14 @@ app.get('/v1/hotslogs/:hero', function (req, res) {
 });
 
 app.get('/v1/hotslogs', function (req, res) {
-  res.send(hotslogsWinRates());
+  const patchNumber = req.query['patch'];
+  let data = hotsLogsWinRates(patchNumber);
+  console.log(JSON.stringify(data))
+  if (!data) {
+    res.status(500).send('Error');
+  } else {
+    res.send(data);
+  }
 });
 
 app.get('/v1/builds/:hero', function (req, res) {
