@@ -11,7 +11,8 @@ let talentSchema = new Schema({
   Name: String,
   Description: String,
   IconFileName: String,
-  Sha3256: String
+  Sha3256: String,
+  __v: { type: Number, select: false}
 });
 
 module.exports = mongoose.model('talents', talentSchema);

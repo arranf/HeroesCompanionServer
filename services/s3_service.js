@@ -9,7 +9,7 @@ if (fs.existsSync('./config.json')) {
   AWS.config.update({
     accessKeyId: process.env.S3_KEY,
     secretAccessKey: process.env.S3_SECRET
-  })
+  });
 }
 
 AWS.config.update({ region: 'eu-west-1' });
@@ -53,8 +53,7 @@ function downloadFromS3 (filePath) {
         throw new Error('Unable to get ' + filePath);
       }
       return response.data;
-    })
-    .catch(e => console.error(e));
+    });
 }
 
 module.exports = { downloadFromS3, uploadtoS3 };

@@ -46,17 +46,19 @@ function fetch() {
       }
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
-      if (end.getUTCMilliseconds() > Date.now()) {
+      if (end < new Date()) {
         // Shit, the website isn't updated yet
         return fetchFromForum();
       } else {
         // We can trust the website's data
         end.setHours(03);
-        data['time'] = new Date().toISOString();
-        data['start'] = start;
-        data['end'] = end;
-        data['heroes'].forEach(hero => {
-          hero['name'] = titleCase(hero['name']);
+        data.time = new Date().toISOString();
+        data.start = start;
+        data.end = end;
+
+        data.heroes = data.heroes.filter(h => h.isFreeToPlay);
+        data.heroes.forEach(hero => {
+          hero.name = titleCase(hero['name']);
         });
         return writeJSONFile('rotation_data.json', data, () =>
           console.log(`Rotation Data Saved ${new Date()}`)
@@ -111,7 +113,7 @@ function fetchFromForum() {
       output.end.setMinutes(59);
       output.end.setSeconds(59);
       output['time'] = new Date().toISOString();
-      return writeJSONFile('rotation_data.json', data, () =>
+      return writeJSONFile('rotation_data.json', output, () =>
         console.log(`Rotation Data Saved ${new Date()}`)
       );
     })
