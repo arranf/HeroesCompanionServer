@@ -46,12 +46,14 @@ function fetch() {
       }
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
+      end.setHours(03);
       if (end < new Date()) {
+        console.log(`Fetching rotation from forum as previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`)
         // Shit, the website isn't updated yet
         return fetchFromForum();
       } else {
+        console.log(`Trusting the website's rotation data as previous ends at ${end.toISOString()} and the time is ${new Date().toISOString()}`)
         // We can trust the website's data
-        end.setHours(03);
         data.time = new Date().toISOString();
         data.start = start;
         data.end = end;

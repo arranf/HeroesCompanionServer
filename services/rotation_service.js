@@ -8,11 +8,11 @@ let lastRead;
 
 const rotationFileName = 'rotation_data.json';
 
-// fetch latest and then schedule getting latest
-getInitialRotation();
+// fetch from S3 and then schedule getting latest
+getInitialRotation().then(() => updateRotation());
 var cron = require('node-cron');
 cron.schedule(
-  '*/15 * * * *',
+  '15 * * * *',
   function () {
     updateRotation();
   },

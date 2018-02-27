@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 let buildSchema = new Schema({
   HeroId: {type: Number, required: true},
   Description: String,
+  Tagline: String,
   Talents: 
   [{ 
     Name: {type: String, required: true}, 
