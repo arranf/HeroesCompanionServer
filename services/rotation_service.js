@@ -32,7 +32,7 @@ function updateRotation () {
 }
 
 function getInitialRotation () {
-  downloadFromS3(rotationFileName)
+  return downloadFromS3(rotationFileName)
     .then(data =>
       writeJSONFile(rotationFileName, data, () =>
         console.log('Got rotation data from S3')
