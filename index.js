@@ -92,6 +92,11 @@ app.post('/v1/builds', async function (req, res) {
     return;
   }
 
+  if (!(newBuild.Tagline || newBuild.Source)) {
+    res.status(500).send('Requires: Tagline and Source');
+    return;
+  }
+
   let hero;
   if (newBuild.HeroName) {
     hero = await Hero.findOne({ Name: newBuild.HeroName }).exec();
@@ -138,7 +143,8 @@ app.post('/v1/builds', async function (req, res) {
         res.status(500).send(feedback.join(','));
         return;
       }
-
+      
+      // TODO refactor below this to be not repeated here and grubby fetch
       let talents = results.map(r => ({
         Name: r.Name,
         TalentTreeId: r.TalentTreeId,
@@ -156,6 +162,7 @@ app.post('/v1/builds', async function (req, res) {
         .digest('hex');
       let build = new Build({
         HeroId: hero.HeroId,
+        Tagline: newBuild.Tagline,
         Description: newBuild.Description,
         Talents: talents,
         Url: newBuild.Url,
