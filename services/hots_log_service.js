@@ -16,12 +16,14 @@ setTimeout(() => _getInitialData(), 3000);
 let cron = require('node-cron');
 cron.schedule(
   '13 8 * * *',
-  () =>
+  () => {
+    console.log('Starting scraping hotslogs');
     _updateHotslogData().catch(e => {
       console.error('Error scraping hotslogs');
       console.error(e);
-    }),
-  false
+    })
+  },
+  true
 );
 
 function _buildPatchFileName (patchNumber) {
