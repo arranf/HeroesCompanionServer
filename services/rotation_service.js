@@ -13,10 +13,7 @@ getInitialRotation().then(() => updateRotation());
 var cron = require('node-cron');
 cron.schedule(
   '15 * * * *',
-  function () {
-    updateRotation();
-  },
-  true
+  () => updateRotation()
 );
 
 function updateRotation () {
