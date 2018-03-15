@@ -77,7 +77,7 @@ function addDays(date, days) {
 }
 
 function fetchFromForum() {
-  const heroNameRegex = /(.*)( \(.*\))/;
+  const heroNameRegex = /(.*)(\(.*\))/;
   const startDayRegex = /.*: (.*)/;
 
   return scrapeIt(
@@ -100,7 +100,7 @@ function fetchFromForum() {
         } else if (matches) {
           h = matches[1];
         }
-        heroes.push({ name: h, isFreeToPlay: true });
+        heroes.push({ name: h.trimRight(), isFreeToPlay: true });
       });
       output['heroes'] = heroes;
       let matches = startDayRegex.exec(data.starting);
