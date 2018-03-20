@@ -47,8 +47,9 @@ function fetch() {
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
       end.setHours(03);
+        console.log(`previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`);
       if (end < new Date()) {
-        console.log(`Fetching rotation from forum as previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`)
+        console.log('Fetching from forum');
         // Shit, the website isn't updated yet
         return fetchFromForum();
       } else {
