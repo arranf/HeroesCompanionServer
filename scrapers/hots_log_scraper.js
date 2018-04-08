@@ -101,7 +101,6 @@ async function _getHeroSpecificData (hero) {
   // }
   await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
-  await nightmare.end();
   return _scrapeHeroPage(html)
     .then(async data => {
       Object.assign(hero, data);
