@@ -95,12 +95,12 @@ async function _scrapeHeroPage (html) {
 async function _getHeroSpecificData (hero) {
   const levelIndexMap = { 1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6 };
 
-  if (isDebug) {
+  // if (isDebug) {
     console.log(`Visiting ${hero.name}`);
-  }
+  // }
 
   const nightmare = new Nightmare({ show: isDebug });
-  await nightmare.goto('https://www.hotslogs.com/' + hero.link, { timeout: 0 });
+  await nightmare.goto('https://www.hotslogs.com/' + hero.link, { gotoTimeout: 90000 });
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
   await nightmare.end();
   return _scrapeHeroPage(html)
@@ -249,7 +249,8 @@ async function fetch (previousData) {
 
   const promises = [];
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
-    for (let i = 0; i < 10; i++) {
+    // Do 3 at a time
+    for (let i = 0; i < 5; i++) {
       let hero = heroesData.heroes[heroIndex];
       heroIndex++;
 
