@@ -99,8 +99,8 @@ async function _getHeroSpecificData (hero) {
     console.log(`Visiting ${hero.name}`);
   // }
 
-  const nightmare = new Nightmare({ show: isDebug });
-  await nightmare.goto('https://www.hotslogs.com/' + hero.link, { gotoTimeout: 90000 });
+  const nightmare = new Nightmare({ show: isDebug, gotoTimeout: 90000 });
+  await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
   await nightmare.end();
   return _scrapeHeroPage(html)
