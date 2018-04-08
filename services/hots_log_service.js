@@ -12,10 +12,11 @@ const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
 
-_updateHotslogData().then(() => setTimeout(() => _getInitialData(), 3000));
+console.log('Starting hotslogs scraping on server start');
+_updateHotslogData().then(() => setTimeout(() => _getInitialData(), 3000)).catch(e => console.error(e));
 let cron = require('node-cron');
 cron.schedule(
-  '17 16 * * *',
+  '17 16,5 * * *',
   () => {
     console.log('Starting scraping hotslogs');
     _updateHotslogData().catch(e => {
