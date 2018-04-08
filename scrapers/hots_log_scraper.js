@@ -96,9 +96,9 @@ async function _scrapeHeroPage (html) {
 async function _getHeroSpecificData (hero) {
   const levelIndexMap = { 1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6 };
 
-  // if (isDebug) {
+  if (isDebug) {
     console.log(`Visiting ${hero.name}`);
-  // }
+  }
   await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
   return _scrapeHeroPage(html)
@@ -266,7 +266,6 @@ async function fetch (previousData) {
   return writeJSONFile(fileName, heroesData, () =>
     console.log(`Written hotslogs.com data to ${fileName}`)
   )
-  .then(() => patch.fullVersion)
   .catch(e => console.error(e));
 }
 
