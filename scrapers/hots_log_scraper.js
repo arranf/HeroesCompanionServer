@@ -8,6 +8,7 @@ let axios = require('axios');
 axiosRetry(axios, { retries: 3 });
 
 const isDebug = process.env.NODE_ENV !== 'production';
+const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
 
 function getDate2DaysAgo () {
   const twoDaysAgo = new Date();
@@ -98,8 +99,6 @@ async function _getHeroSpecificData (hero) {
   // if (isDebug) {
     console.log(`Visiting ${hero.name}`);
   // }
-
-  const nightmare = new Nightmare({ show: isDebug, gotoTimeout: 90000 });
   await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
   await nightmare.end();
@@ -218,7 +217,6 @@ function _selectCorrectPatch(currentData, previousData) {
 }
 
 async function fetch (previousData) {
-  const nightmare = new Nightmare({ show: isDebug });
   await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
   await nightmare.wait(500);
@@ -242,29 +240,24 @@ async function fetch (previousData) {
   }
 
   const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
-  await nightmare.end();
   const heroesData = await _fetchAllHeroWinRates(html);
-
+  
   heroesData.scrapedDate = new Date();
-
-  const promises = [];
+  
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
-    // Do 3 at a time
-    for (let i = 0; i < 5; i++) {
-      let hero = heroesData.heroes[heroIndex];
-      heroIndex++;
-
-      if (!hero) {
-        continue;
-      }
-
-      promises.push(_getHeroSpecificData(hero));
+    let hero = heroesData.heroes[heroIndex];
+    heroIndex++;
+    
+    if (!hero) {
+      continue;
     }
-    await Promise.all(promises).catch(e => console.error(e));
+    
+    await _getHeroSpecificData(hero);
   }
-
+  await nightmare.end();
+  
   const patch = _selectCorrectPatch(heroesData, previousData);
-
+  
   if (patch == null) {
     // This is the case where hotslog knows there's a new patch before we do, we'll collect the data later
     return;
