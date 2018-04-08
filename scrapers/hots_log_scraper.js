@@ -1,8 +1,13 @@
-const puppeteer = require('puppeteer');
+const Nightmare = require('nightmare');
 const scrapeIt = require('scrape-it');
 const { writeJSONFile } = require('../services/file_service');
 const { v2PatchData } = require('../services/patch_service');
+const axiosRetry = require('axios-retry');
+
 let axios = require('axios');
+axiosRetry(axios, { retries: 3 });
+
+const isDebug = process.env.NODE_ENV !== 'production';
 
 function getDate2DaysAgo () {
   const twoDaysAgo = new Date();
@@ -16,7 +21,7 @@ function getDate2DaysAgo () {
  * @param {String} html The HTML for the hotslog.com homepage
  * @returns {Promise} An array containing an array of hero objects {name, played, popularity, winPercentage, link}
  */
-async function fetchAllHeroWinRates (html) {
+async function _fetchAllHeroWinRates (html) {
   return scrapeIt.scrapeHTML(html, {
     heroes: {
       listItem: '.rgMasterTable > tbody > tr',
@@ -49,7 +54,7 @@ async function fetchAllHeroWinRates (html) {
  * @param {String} html The hero page's html
  * @returns {Promise} which resolves to an object with a build array, each of which contains an object {gamesPlayed, winPercentage, talents {name, level}}
  */
-async function scrapeHeroPage (html) {
+async function _scrapeHeroPage (html) {
   return scrapeIt.scrapeHTML(html, {
     builds: {
       listItem: "[id$='PopularTalentBuilds'] tbody > tr",
@@ -84,18 +89,23 @@ async function scrapeHeroPage (html) {
 /**
  * Scrape's the hero's hotslogs specific page and combines the data with the hero object and fills missing talents in builds with hots.dog data
  *
- * @param {any} page A Puppeteer page
  * @param {any} hero The Hero containing the page to visit
  * @returns
  */
-async function getHeroSpecificData (page, hero) {
+async function _getHeroSpecificData (hero) {
   const levelIndexMap = { 1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6 };
-  await page.goto('https://www.hotslogs.com/' + hero.link, { timeout: 0 });
-  const html = await page.$eval('html', html => html.innerHTML);
-  return scrapeHeroPage(html)
+
+  if (isDebug) {
+    console.log(`Visiting ${hero.name}`);
+  }
+
+  const nightmare = new Nightmare({ show: isDebug });
+  await nightmare.goto('https://www.hotslogs.com/' + hero.link, { timeout: 0 });
+  const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
+  await nightmare.end();
+  return _scrapeHeroPage(html)
     .then(async data => {
       Object.assign(hero, data);
-      await page.close();
       return hero;
     })
     .then(() => {
@@ -108,7 +118,6 @@ async function getHeroSpecificData (page, hero) {
         p => p.hotsDogId !== '' && new Date(p.liveDate) <= aWeekAgo
       );
 
-      // TODO Retry if fail
       return axios.get('https://hots.dog/api/get-build-winrates', {
         params: {
           build: currentPatch.hotsDogId,
@@ -146,6 +155,7 @@ async function getHeroSpecificData (page, hero) {
           .filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0)
           .map(x => parseInt(x, 10));
         const talentNames = hotsLogBuild.talents.map(t => t.name);
+        
         for (let i = 0; i < hotsDogBuilds.length; i++) {
           let hotsDogBuild = hotsDogBuilds[i];
           if (talentNames.every(name => hotsDogBuild.indexOf(name) >= 0)) {
@@ -156,12 +166,8 @@ async function getHeroSpecificData (page, hero) {
               hotsLogBuild.talents.push({ name: name, level: level });
             });
             break;
-          } else if (
-            missingTalents.length === 1 &&
-            missingTalents[0] === 20 &&
-            i === hotsDogBuild.length - 1
-          ) {
-            // We weren't going to match this but we can guess a level 20 talent here
+          } else if (missingTalents.length === 1 && missingTalents[0] === 20 && i === hotsDogBuild.length - 1) {
+            // In this case we weren't going to match but we can guess a level 20 talent here
             let level10 = hotsLogBuild.talents.find(a => a.level === 10);
             let matchingLevel10Build = hotsDogBuilds.find(a =>
               a.find(b => b.indexOf(level10.name) >= 0)
@@ -179,71 +185,23 @@ async function getHeroSpecificData (page, hero) {
     .catch(e => console.error(e));
 }
 
-async function fetch (previousData) {
-  const isDebug = process.env.NODE_ENV !== 'production';
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
-  await page.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
-  await page.waitFor(500);
-  await page.click(
-    '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
-  );
-  await page.waitFor(500);
-  await page.click('footer');
-  await page.waitFor(3000);
-  const isFilteredCorrect = await page.$eval(
-    '#ctl00_MainContent_ComboBoxReplayDateTime_Input',
-    input => input.getAttribute('value').includes('Current')
-  );
-  if (!isFilteredCorrect) {
-    throw new Exception(
-      'Failed to set hotlsogs filters correctly in puppeteer'
-    );
-  }
-
-  const html = await page.$eval('html', html => html.innerHTML);
-  const heroesData = await fetchAllHeroWinRates(html);
-  await page.close();
-
-  // Identify patch
-  heroesData.heroes[0];
-
-  //
-  const promises = [];
-  for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
-    for (let i = 0; i < 10; i++) {
-      let hero = heroesData.heroes[heroIndex];
-      heroIndex++;
-
-      if (!hero) {
-        console.error('Skipping malformed hero?');
-        continue;
-      }
-
-      if (isDebug) {
-        console.log(`Visiting ${hero.name}`);
-      }
-      let page = await browser.newPage();
-      promises.push(getHeroSpecificData(page, hero));
-    }
-    await Promise.all(promises).catch(e => console.error(e));
-  }
-  await browser.close();
-
-  // Find out if a significant number of heroes have less builds - a new patch indicator
-  let numberOfHeroesWithLessBuilds = 0;
+function _selectCorrectPatch(currentData, previousData) {
   let newPatch = false;
-  for (let i = 0; i < heroesData.heroes.length; i++) {
-    let hero = heroesData.heroes[i];
-    let previousDataHero = previousData.find(h => h.name === hero.name);
-    if (hero.builds.length < previousDataHero.builds) {
-      numberOfHeroesWithLessBuilds++;
-    }
-
-    if (numberOfHeroesWithLessBuilds >= previousDataHero.length * 0.2) {
-      newPatch = true;
-      break;
+  
+  // Find out if a significant number of heroes have less builds - a new patch indicator
+  if (previousData) {
+    let numberOfHeroesWithLessBuilds = 0;
+    for (let i = 0; i < heroesData.heroes.length; i++) {
+      let hero = heroesData.heroes[i];
+      let previousDataHero = previousData.find(h => h.name === hero.name);
+      if (hero.builds.length < previousDataHero.builds) {
+        numberOfHeroesWithLessBuilds++;
+      }
+  
+      if (numberOfHeroesWithLessBuilds >= previousDataHero.length * 0.2 && previousData.scrapedDate && new Date(previousData.scrapedDate) > twoDaysAgo) {
+        newPatch = true;
+        break;
+      }
     }
   }
 
@@ -256,18 +214,67 @@ async function fetch (previousData) {
     patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
   }
 
-  if (patch == null) {
-    return;
+  return patch;
+}
+
+async function fetch (previousData) {
+  const nightmare = new Nightmare({ show: isDebug });
+  await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
+  await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
+  await nightmare.wait(500);
+  await nightmare.click(
+    '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
+  );
+  await nightmare.wait(1000);
+  // await nightmare.mouseover('#h1Title > h1');
+  await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Arrow');
+  await nightmare.wait(3000);
+  const selector =  '#ctl00_MainContent_ComboBoxReplayDateTime_Input';
+  const isFilteredCorrect = await nightmare.evaluate( selector => {
+      return document.querySelector(selector).getAttribute('value').includes('Current');
+    }, selector
+  );
+
+  if (!isFilteredCorrect) {
+    throw new Error(
+      'Failed to set hotlsogs filters correctly in nightmare'
+    );
   }
 
+  const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
+  await nightmare.end();
+  const heroesData = await _fetchAllHeroWinRates(html);
+
+  heroesData.scrapedDate = new Date();
+
+  const promises = [];
+  for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
+    for (let i = 0; i < 10; i++) {
+      let hero = heroesData.heroes[heroIndex];
+      heroIndex++;
+
+      if (!hero) {
+        continue;
+      }
+
+      promises.push(_getHeroSpecificData(hero));
+    }
+    await Promise.all(promises).catch(e => console.error(e));
+  }
+
+  const patch = _selectCorrectPatch(heroesData, previousData);
+
+  if (patch == null) {
+    // This is the case where hotslog knows there's a new patch before we do, we'll collect the data later
+    return;
+  }
+  
   const fileName = `hots_log_${patch.fullVersion}.json`;
   return writeJSONFile(fileName, heroesData, () =>
-    console.log(
-      `${newPatch ? 'New Patch!' : ''} Written hotslogs.com data to ${fileName}`
-    )
+    console.log(`Written hotslogs.com data to ${fileName}`)
   )
-    .then(() => patch.fullVersion)
-    .catch(e => console.error(e));
+  .then(() => patch.fullVersion)
+  .catch(e => console.error(e));
 }
 
 module.exports = fetch;

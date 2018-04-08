@@ -12,7 +12,7 @@ const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
 
-setTimeout(() => _getInitialData(), 3000);
+_updateHotslogData().then(() => setTimeout(() => _getInitialData(), 3000));
 let cron = require('node-cron');
 cron.schedule(
   '17 16 * * *',
@@ -59,7 +59,7 @@ function _updateHotslogData () {
   );
 
   let thisPatchNumber;
-  fetchHotsLogsData(_hotsLogData[currentPatchNumber], currentPatchNumber)
+  return fetchHotsLogsData(_hotsLogData[currentPatchNumber], currentPatchNumber)
     .then(fullVersion => {
       thisPatchNumber = fullVersion;
       fileName = _buildPatchFileName(fullVersion);
