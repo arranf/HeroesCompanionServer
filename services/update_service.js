@@ -34,7 +34,7 @@ function getUpdateData () {
     .catch(e => console.error(e));
 }
 
-function doSelfUpdate () {
+async function doSelfUpdate () {
   console.log('Starting DB Update');
   updateData.heroes.forEach(hero => {
     let query = { HeroId: hero.HeroId };
@@ -43,6 +43,33 @@ function doSelfUpdate () {
     });
   });
 
+  // https://stackoverflow.com/questions/14446511/what-is-the-most-efficient-method-to-groupby-on-a-javascript-array-of-objects
+  let groupBy = function(xs, key) {
+    return xs.reduce(function(rv, x) {
+      (rv[x[key]] = rv[x[key]] || []).push(x);
+      return rv;
+    }, {});
+  };
+
+  let talents = JSON.parse(JSON.stringify(updateData.talents));
+  let talentsGroupedByHeroId = groupBy(talents, 'HeroId');
+  const talentsToDelete = [];
+  // Find the talents to delete - they are ones where the TalentTreeId does not exist in the new set of talents
+  // Can't async foreach here so we create promises then wait for them
+  const promises = await Object.keys(talentsGroupedByHeroId).map(async (heroId) => {
+    const newTalents = talentsGroupedByHeroId[heroId];
+    const existingTalents = await Talent.find({HeroId: heroId}).exec()
+    existingTalents.forEach((t) => {
+      if (!(newTalents.find(n => n.HeroId === t.HeroId && n.TalentTreeId === t.TalentTreeId && n.ToolTipId === t.ToolTipId))) {
+        // Doesn't exist in new talents, delete it
+        talentsToDelete.push(t);
+      }
+    });
+  });
+  await Promise.all(promises);
+  // Remove the talents that need deleting
+  await Promise.all(talentsToDelete.map(t => t.remove()));
+  
   updateData.talents.forEach(talent => {
     let query = { HeroId: talent.HeroId, ToolTipId: talent.ToolTipId };
     Talent.findOneAndUpdate(query, talent, { upsert: true }, function (
