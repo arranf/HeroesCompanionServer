@@ -26,6 +26,14 @@ app.use(shrinkRay());
 // Body parsing
 app.use(express.json());
 
+// Cors
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+
 // Routes
 app.get('/', function (req, res) {
   res.send('Heroes Companion - A project of passion');
