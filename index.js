@@ -60,12 +60,25 @@ app.get('/v2/patches', function (req, res) {
 });
 
 app.get('/v1/heroes', function (req, res) {
-  Hero.find(function (err, heroes) {
-    if (err) {
-      res.send(err);
+  let heroes;
+
+  Hero.find().exec()
+  .then(values => {
+    heroes = values;
+    const promises = [];
+    heroes.forEach(h => promises.push(Talent.find({HeroId: h.HeroId}).exec()));
+    return Promise.all(promises);
+  })
+  .then(values => {
+    let combinedHeroTalents = [];
+    for (let i = 0; i < heroes.length; i++) {
+      let hero = heroes[i];
+      let talents = values[i];
+      combinedHeroTalents.push(({Name: hero.Name, HeroId: hero.HeroId, Talents: talents}));
     }
-    res.json(heroes);
-  });
+    res.json(combinedHeroTalents);
+  })
+  .catch(err => {res.status(404); res.send(err);});
 });
 
 app.get('/v1/hotslogs/:hero', function (req, res) {
@@ -83,7 +96,6 @@ app.get('/v1/hotslogs/:hero', function (req, res) {
 app.get('/v1/hotslogs', function (req, res) {
   const patchNumber = req.query['patch'];
   let data = hotsLogsWinRates(patchNumber);
-  console.log(JSON.stringify(data))
   if (!data) {
     res.status(500).send('Error');
   } else {
