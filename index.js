@@ -51,6 +51,15 @@ app.get('/v2/patches', function (req, res) {
   res.send(v2PatchData());
 });
 
+app.get('/v1/heroes', function (req, res) {
+  Hero.find(function (err, heroes) {
+    if (err) {
+      res.send(err);
+    }
+    res.json(heroes);
+  });
+});
+
 app.get('/v1/hotslogs/:hero', function (req, res) {
   const heroName = req.params['hero'];
   const patchNumber = req.query['patch'];

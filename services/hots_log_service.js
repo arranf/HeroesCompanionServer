@@ -11,6 +11,7 @@ let _lastRead;
 const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
+// TODO change this to get a promise
 setTimeout(() => _getInitialData(), 7000);
 let cron = require('node-cron');
 cron.schedule(
