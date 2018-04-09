@@ -266,6 +266,8 @@ async function fetch (previousData) {
   return writeJSONFile(fileName, heroesData, () =>
     console.log(`Written hotslogs.com data to ${fileName}`)
   )
+  // return the filename of the app
+  .then(() => patch.fullVersion) 
   .catch(e => console.error(e));
 }
 
