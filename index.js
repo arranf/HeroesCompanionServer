@@ -113,6 +113,11 @@ app.get('/v1/builds/:hero', function (req, res) {
 });
 
 app.post('/v1/builds', async function (req, res) {
+  if (req.get('Authorization')!== process.env.API_SECRET) {
+    res.status(500).send('Secret Does Not Match');
+    return;
+  }
+
   let newBuild = req.body;
   if (
     !((newBuild.HeroName || newBuild.HeroId) && newBuild.Talents.length === 7)
