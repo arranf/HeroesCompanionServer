@@ -46,12 +46,13 @@ function fetch() {
         throw new Error('Duration string matching failed');
       }
       let start = chrono.parseDate(matches[1]);
+      // Website rotation ends at :
       let end = chrono.parseDate(matches[2]);
       end.setHours(03);
-      console.log(`previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`);
+      console.log(`Previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`);
       if (end < new Date()) {
-        console.log('Fetching from forum');
         // Shit, the website isn't updated yet
+        console.log('Fetching from forum');
         return fetchFromForum();
       } else {
         console.log(`Trusting the website's rotation data as previous ends at ${end.toISOString()} and the time is ${new Date().toISOString()}`)
@@ -59,7 +60,7 @@ function fetch() {
         data.time = new Date().toISOString();
         data.start = start;
         data.end = end;
-
+        // TODO CHECK IF HEROES ARE DIFFERENT AND INVALIDATE CLOUDFRONT CACHE
         data.heroes = data.heroes.filter(h => h.isFreeToPlay);
         data.heroes.forEach(hero => {
           hero.name = titleCase(hero['name']);
