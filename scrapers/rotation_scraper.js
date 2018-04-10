@@ -1,6 +1,6 @@
 const Nightmare = require('nightmare');
 const jquery = require('jquery');
-const nightmare = new Nightmare({ show: false });
+
 const chrono = require('chrono-node');
 const titleCase = require('title-case');
 const scrapeIt = require('scrape-it');
@@ -8,6 +8,7 @@ const { writeJSONFile } = require('../services/file_service');
 
 function fetch() {
   const regex = /(\d{1,2}-[A-Za-z]{3,4}-\d{4}) [–,-] (\d{1,2}-[A-Za-z]{3,4}-\d{4})/;
+  const nightmare = new Nightmare({ show: false });
   console.log('Fetching rotation data');
   // Nightmare example: https://github.com/nelsonkhan/nightmare-gigs/blob/master/gigs.js
   return nightmare
@@ -47,7 +48,7 @@ function fetch() {
       let start = chrono.parseDate(matches[1]);
       let end = chrono.parseDate(matches[2]);
       end.setHours(03);
-        console.log(`previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`);
+      console.log(`previous ended at ${end.toISOString()} and the time is ${new Date().toISOString()}`);
       if (end < new Date()) {
         console.log('Fetching from forum');
         // Shit, the website isn't updated yet

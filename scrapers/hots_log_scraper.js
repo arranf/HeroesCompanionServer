@@ -8,7 +8,7 @@ let axios = require('axios');
 axiosRetry(axios, { retries: 3 });
 
 const isDebug = process.env.NODE_ENV !== 'production';
-const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
+let nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
 
 function getDate2DaysAgo () {
   const twoDaysAgo = new Date();
@@ -216,6 +216,7 @@ function _selectCorrectPatch(currentData, previousData) {
 }
 
 async function fetch (previousData) {
+  nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
   await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
   await nightmare.wait(500);
