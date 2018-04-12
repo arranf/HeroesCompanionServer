@@ -60,7 +60,8 @@ async function doSelfUpdate () {
     const newTalents = talentsGroupedByHeroId[heroId];
     const existingTalents = await Talent.find({HeroId: heroId}).exec()
     existingTalents.forEach((t) => {
-      if (!(newTalents.find(n => n.HeroId === t.HeroId && n.TalentTreeId === t.TalentTreeId && n.ToolTipId === t.ToolTipId))) {
+      // This should match the update procedure in the app
+      if (!(newTalents.find(n => n.HeroId === t.HeroId && n.ToolTipId === t.ToolTipId))) {
         // Doesn't exist in new talents, delete it
         talentsToDelete.push(t);
       }
