@@ -15,7 +15,7 @@ const _hotsLogFileName = 'hots_log';
 setTimeout(() => _getInitialData(), 7000);
 let cron = require('node-cron');
 cron.schedule(
-  '17 16,5 * * *',
+  '17 0,4,8,12,16,20 * * *',
   () => {
     console.log('Starting scraping hotslogs');
     _updateHotslogData().catch(e => {
