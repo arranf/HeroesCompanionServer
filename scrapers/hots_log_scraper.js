@@ -185,6 +185,7 @@ async function _getHeroSpecificData (hero) {
 
 function _selectCorrectPatch(currentData, previousData) {
   let newPatch = false;
+  const twoDaysAgo = getDate2DaysAgo();
   
   // Find out if a significant number of heroes have less builds - a new patch indicator
   if (previousData) {
@@ -204,7 +205,6 @@ function _selectCorrectPatch(currentData, previousData) {
   }
 
   let patch = null;
-  const twoDaysAgo = getDate2DaysAgo();
   let patches = v2PatchData();
   if (newPatch) {
     // tomorrow > today
