@@ -189,8 +189,8 @@ function _selectCorrectPatch(currentData, previousData) {
   // Find out if a significant number of heroes have less builds - a new patch indicator
   if (previousData) {
     let numberOfHeroesWithLessBuilds = 0;
-    for (let i = 0; i < heroesData.heroes.length; i++) {
-      let hero = heroesData.heroes[i];
+    for (let i = 0; i < currentData.heroes.length; i++) {
+      let hero = currentData.heroes[i];
       let previousDataHero = previousData.find(h => h.name === hero.name);
       if (hero.builds.length < previousDataHero.builds) {
         numberOfHeroesWithLessBuilds++;
