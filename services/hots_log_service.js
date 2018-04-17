@@ -12,7 +12,7 @@ const _hotsLogFileName = 'hots_log';
 
 // fetch latest and then schedule getting latest
 // TODO change this to get a promise
-setTimeout(() => _getInitialData(), 7000);
+_updateHotslogData().then(() => setTimeout(() => _getInitialData(), 7000));
 let cron = require('node-cron');
 cron.schedule(
   '17 0,4,8,12,16,20 * * *',
@@ -61,11 +61,17 @@ function _updateHotslogData () {
   let thisPatchNumber;
   return fetchHotsLogsData(_hotsLogData[currentPatchNumber], currentPatchNumber)
     .then(fullVersion => {
+      if (!fullVersion) {
+        throw 'No full version passed from hots_log_scraper to hots_log_service';
+      }
       thisPatchNumber = fullVersion;
       fileName = _buildPatchFileName(fullVersion);
       return readFile(fileName);
     })
     .then(data => {
+      if (!data) {
+        throw `No data found in ${fileName}`;
+      }
       _generateData(JSON.parse(data), thisPatchNumber);
       return uploadtoS3(fileName);
     })

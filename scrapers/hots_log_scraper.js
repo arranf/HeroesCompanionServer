@@ -207,8 +207,10 @@ function _selectCorrectPatch(currentData, previousData) {
   const twoDaysAgo = getDate2DaysAgo();
   let patches = v2PatchData();
   if (newPatch) {
+    // tomorrow > today
     patch = patches.find(p => new Date(p.liveDate) > twoDaysAgo);
   } else {
+    // yesterday < today
     patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
   }
 
@@ -258,7 +260,7 @@ async function fetch (previousData) {
   
   const patch = _selectCorrectPatch(heroesData, previousData);
   
-  if (patch == null) {
+  if (!patch) {
     // This is the case where hotslog knows there's a new patch before we do, we'll collect the data later
     return;
   }
