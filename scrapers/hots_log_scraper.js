@@ -15,6 +15,8 @@ axiosRetry(axios, { retries: 3 });
 const isDebug = process.env.NODE_ENV !== 'production';
 let nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
 
+const talentDoesntRequireLevel10Ult = (talent, hero) => (!talent.AbilityId.includes("|R1") && !talent.AbilityId.includes("|R2")) || hero.Name === "Alarak";
+
 function getDate2DaysAgo () {
   const twoDaysAgo = new Date();
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -144,7 +146,7 @@ async function _fillInMissingTalents(response, hero, levelIndexMap) {
   if (!response.data) {
     throw new Exception('Failure getting hots dog build');
   }
-  console.log('Filling in missing talents')
+
   let data = response.data;
 
   let hotsDogBuilds = [];
@@ -158,7 +160,7 @@ async function _fillInMissingTalents(response, hero, levelIndexMap) {
   if (data.WinningBuilds) {
     data.WinningBuilds.forEach(b => {
       if (b.Build.length === 7) {
-        hotsDogBuilds.push(b.Build.map(a => response.Talents[a].Name));
+        hotsDogBuilds.push(b.Build.map(a => data.Talents[a].Name));
       }
     });
   }
@@ -169,11 +171,9 @@ async function _fillInMissingTalents(response, hero, levelIndexMap) {
   const firstUltLevel = hero.name === "Varian" ? 4 : 10;
 
   const heroModel = await Hero.findOne({Name: hero.name}).exec();
-  const level10Popularity = Object.entries(data.Current[levelIndexMap[firstUltLevel]]).map(a => ({'TalentTreeId': a[0], 'Total':(a[1].Wins)}));
   const level20Popularity = Object.entries(data.Current[levelIndexMap[20]]).map(a => ({'TalentTreeId': a[0], 'Total':(a[1].Wins)}));
   const mostPopularLevel20TalentData = level20Popularity.reduce((a, b) => (a.Total > b.Total) ? a : b);
   const mostPopularLevel20TalentTreeId = mostPopularLevel20TalentData.TalentTreeId;
-  const mostPopularLevel20TalentPopularity = mostPopularLevel20TalentData.Total;
   const mostPopularLevel20Talent = await Talent.findOne({
     TalentTreeId: mostPopularLevel20TalentTreeId,
     HeroId: heroModel.HeroId
@@ -220,17 +220,28 @@ async function _fillInMissingTalents(response, hero, levelIndexMap) {
           HeroId: heroModel.HeroId
         }).exec();
 
-        const matchingLevel10Talent = await Talent.findOne({HeroId: heroModel.HeroId, Level: 20, AbilityId: chosenLevel10Talent.AbilityId}).exec()
-        let matchingLevel10Popularity = 0;
-        const matchingLevel10Data = level10Popularity.find(a => a.TalentTreeId === matchingLevel10Talent.TalentTreeId);
-        if (matchingLevel10Data && matchingLevel10Data.Total) {
-          matchingLevel10Popularity = matchingLevel10Data.Total;
+        if (!chosenLevel10Talent) {
+          throw new Error(`No chosen level 10 talent found for hero ${hero.name}. Suspected chosen level 10 should be \'${chosenLevel10TalentName}\'`)
         }
 
-        if (matchingLevel10Popularity >= mostPopularLevel20TalentPopularity) {
+        const matchingLevel10Talent = await Talent.findOne({HeroId: heroModel.HeroId, Level: 20, AbilityId: chosenLevel10Talent.AbilityId}).exec();        
+        if (mostPopularLevel20Talent && chosenLevel10Talent && (chosenLevel10Talent.AbilityId == mostPopularLevel20Talent.AbilityId || talentDoesntRequireLevel10Ult(mostPopularLevel20Talent, heroModel))) {
+         hotsLogBuild.talents.push({ name: mostPopularLevel20Talent.Name, level: 20 });
+        } 
+        else if (matchingLevel10Talent) {
           hotsLogBuild.talents.push({ name: matchingLevel10Talent.Name, level: 20 });
-        } else {
-          hotsLogBuild.talents.push({ name: mostPopularLevel20Talent.Name, level: 20 });
+        }
+        else {
+          // This hero doesn't have a level 20 talent to match their level 10 choice and the most popular ult is for another level 10 choice we didn't make
+          console.error(`We failed to find a level 20 talent to match for ${heroModel.Name} so we're selecting a random one`);
+          
+          // TODO Make this find all of them then choose the most popular to avoid always selecting the first in the DB
+          const randomLevel20 = await Talent.findOne({
+            Level: 20,
+            HeroId: 80,
+            AbilityId: { "$regex": '^([A-Z]+\|)(?!R1|R2)' }
+          }).exec();
+          hotsLogBuild.talents.push({ name: randomLevel20.Name, level: 20 });
         }
       }
     }
