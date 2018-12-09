@@ -10,9 +10,13 @@ let _lastRead;
 
 const _hotsLogFileName = 'hots_log';
 
-// fetch latest and then schedule getting latest
-// TODO change this to get a promise
-_updateHotslogData().then(() => setTimeout(() => _getInitialData(), 7000));
+// TODO change this to get a promise (still relevant?)
+// fetch cached and then schedule getting latest - wait before to ensure patches are fetched before we get the hotslogs data
+setTimeout(() => 
+  _getInitialData()
+    .then(() => setTimeout(() => _updateHotslogData(), 7000))
+, 3000);
+
 let cron = require('node-cron');
 cron.schedule(
   '17 0,4,8,12,16,20 * * *',
@@ -47,6 +51,7 @@ function _generateData (data, patchNumber) {
 }
 
 function _updateHotslogData () {
+  console.log('Updating Hotslogs Data')
   let fileName = '';
   let currentPatchNumber = compare.max(
     Object.keys(_hotsLogData).map(a => {
