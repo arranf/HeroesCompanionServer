@@ -4,6 +4,7 @@ let axios = require('axios');
 let AWS = require('aws-sdk');
 var fs = require('fs');
 if (fs.existsSync('./config.json')) {
+  // https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-json-file.html
   AWS.config.loadFromPath('./config.json');
 } else {
   AWS.config.update({
