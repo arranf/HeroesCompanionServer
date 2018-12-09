@@ -13,8 +13,7 @@ cron.schedule(
   '*/10 * * * *',
   function () {
     getUpdateData();
-  },
-  true
+  }
 );
 
 function getUpdateData () {

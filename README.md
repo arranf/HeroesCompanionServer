@@ -1,1 +1,1 @@
-rotation-scraper
+# A server for Heroes Companion

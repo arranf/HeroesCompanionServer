@@ -10,8 +10,7 @@ cron.schedule(
   '*/29 * * * *',
   function () {
     getPatchData();
-  },
-  true
+  }
 );
 
 function saveV1PatchData (hotsDogData, buildData) {

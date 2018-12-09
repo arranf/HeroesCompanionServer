@@ -26,8 +26,7 @@ cron.schedule(
       console.error('Error scraping hotslogs');
       console.error(e);
     })
-  },
-  true
+  }
 );
 
 function _buildPatchFileName (patchNumber) {

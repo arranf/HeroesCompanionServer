@@ -322,7 +322,7 @@ async function fetch (previousData) {
     await _getHeroSpecificData(hero);
     heroIndex++;
   }
-  await nightmare.end();
+  await nightmare.halt();
   
   const patch = _selectCorrectPatch(heroesData, previousData);
   
