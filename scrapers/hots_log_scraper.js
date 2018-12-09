@@ -1,8 +1,13 @@
 const Nightmare = require('nightmare');
 const scrapeIt = require('scrape-it');
+const axiosRetry = require('axios-retry');
+
+const Talent = require('../models/talent');
+const Hero = require('../models/hero');
+
 const { writeJSONFile } = require('../services/file_service');
 const { v2PatchData } = require('../services/patch_service');
-const axiosRetry = require('axios-retry');
+
 
 let axios = require('axios');
 axiosRetry(axios, { retries: 3 });
@@ -94,7 +99,7 @@ async function _scrapeHeroPage (html) {
  * @returns
  */
 async function _getHeroSpecificData (hero) {
-  const levelIndexMap = { 1: 0, 4: 1, 7: 2, 10: 3, 13: 4, 16: 5, 20: 6 };
+  const levelIndexMap = { 1: 1, 4: 2, 7: 3, 10: 4, 13: 5, 16: 6, 20: 7 };
 
   if (isDebug) {
     console.log(`Visiting ${hero.name}`);
@@ -123,64 +128,115 @@ async function _getHeroSpecificData (hero) {
         }
       });
     })
-    .then(response => {
-      // Goal fill in any missing hotslogs talents by using hotsdog builds.
-      if (!response.data) {
-        throw new Exception('Failure getting hots dog build');
-      }
-
-      let hotsDogBuilds = [];
-
-      if (response.data.PopularBuilds) {
-        response.data.PopularBuilds.forEach(b => {
-          if (b.Build.length === 7) {
-            hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
-          }
-        });
-      }
-
-      if (response.data.WinningBuilds) {
-        response.data.WinningBuilds.forEach(b => {
-          if (b.Build.length === 7) {
-            hotsDogBuilds.push(b.Build.map(a => response.data.Talents[a].Name));
-          }
-        });
-      }
-
-      hero.builds.forEach(hotsLogBuild => {
-        const haveTalentLevels = hotsLogBuild.talents.map(t => t.level);
-        const missingTalents = Object.keys(levelIndexMap)
-          .filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0)
-          .map(x => parseInt(x, 10));
-        const talentNames = hotsLogBuild.talents.map(t => t.name);
-        
-        for (let i = 0; i < hotsDogBuilds.length; i++) {
-          let hotsDogBuild = hotsDogBuilds[i];
-          if (talentNames.every(name => hotsDogBuild.indexOf(name) >= 0)) {
-            // We have a match!
-            missingTalents.forEach(level => {
-              const name = hotsDogBuild[levelIndexMap[level]];
-              // parseInt to produce a number not a string
-              hotsLogBuild.talents.push({ name: name, level: level });
-            });
-            break;
-          } else if (missingTalents.length === 1 && missingTalents[0] === 20 && i === hotsDogBuild.length - 1) {
-            // In this case we weren't going to match but we can guess a level 20 talent here
-            let level10 = hotsLogBuild.talents.find(a => a.level === 10);
-            let matchingLevel10Build = hotsDogBuilds.find(a =>
-              a.find(b => b.indexOf(level10.name) >= 0)
-            );
-            if (matchingLevel10Build) {
-              let level20TalentName = matchingLevel10Build[levelIndexMap[20]];
-              hotsLogBuild.talents.push({ name: level20TalentName, level: 20 });
-            }
-          }
-        }
-      });
-      hero.builds = hero.builds.filter(b => b.talents.length === 7);
-      return hero;
+    .then(async response => {
+      return await _fillInMissingTalents(response, hero, levelIndexMap);
     })
     .catch(e => console.error(e));
+}
+
+/**
+ * Takes partial hotslog builds and attempts to fill in missing talents either using hots.dog builds to fill in blank or by guessing level 20 talents
+ * @param {*} response The hots.dog build data for this hero
+ * @param {*} hero The scraped hero object
+ * @param {*} levelIndexMap The map of hero talent levels to hots.dog indices
+ */
+async function _fillInMissingTalents(response, hero, levelIndexMap) {
+  if (!response.data) {
+    throw new Exception('Failure getting hots dog build');
+  }
+  console.log('Filling in missing talents')
+  let data = response.data;
+
+  let hotsDogBuilds = [];
+  if (data.PopularBuilds) {
+    data.PopularBuilds.forEach(b => {
+      if (b.Build.length === 7) {
+        hotsDogBuilds.push(b.Build.map(a => data.Talents[a].Name));
+      }
+    });
+  }
+  if (data.WinningBuilds) {
+    data.WinningBuilds.forEach(b => {
+      if (b.Build.length === 7) {
+        hotsDogBuilds.push(b.Build.map(a => response.Talents[a].Name));
+      }
+    });
+  }
+
+  // Worst case talent matching data (done here to avoid doing in loop)
+  
+  // Varian gets his level 10 at level 4
+  const firstUltLevel = hero.name === "Varian" ? 4 : 10;
+
+  const heroModel = await Hero.findOne({Name: hero.name}).exec();
+  const level10Popularity = Object.entries(data.Current[levelIndexMap[firstUltLevel]]).map(a => ({'TalentTreeId': a[0], 'Total':(a[1].Wins)}));
+  const level20Popularity = Object.entries(data.Current[levelIndexMap[20]]).map(a => ({'TalentTreeId': a[0], 'Total':(a[1].Wins)}));
+  const mostPopularLevel20TalentData = level20Popularity.reduce((a, b) => (a.Total > b.Total) ? a : b);
+  const mostPopularLevel20TalentTreeId = mostPopularLevel20TalentData.TalentTreeId;
+  const mostPopularLevel20TalentPopularity = mostPopularLevel20TalentData.Total;
+  const mostPopularLevel20Talent = await Talent.findOne({
+    TalentTreeId: mostPopularLevel20TalentTreeId,
+    HeroId: heroModel.HeroId
+  }).exec();
+
+
+
+  for (let i = 0; i < hero.builds.length; i++) {
+      let hotsLogBuild = hero.builds[i]; 
+      const haveTalentLevels = hotsLogBuild.talents.map(t => t.level);
+      const missingTalents = Object.keys(levelIndexMap)
+        .filter(x => haveTalentLevels.indexOf(parseInt(x, 10)) < 0)
+        .map(x => parseInt(x, 10));
+      const talentNames = hotsLogBuild.talents.map(t => t.name);
+      
+      // First try matching with hots dog builds
+      for (let i = 0; i < hotsDogBuilds.length; i++) {
+        let hotsDogBuild = hotsDogBuilds[i];
+        if (talentNames.every(name => hotsDogBuild.indexOf(name) >= 0)) {
+          // We have a match!
+          missingTalents.forEach(level => {
+            const name = hotsDogBuild[levelIndexMap[level]];
+            hotsLogBuild.talents.push({ name: name, level: level });
+          });
+          continue;
+        }
+        else if (missingTalents.length === 1 && missingTalents[0] === 20 && i === hotsDogBuild.length - 1) {
+          // In this case we weren't going to match but we can guess a level 20 talent here
+          const level10 = hotsLogBuild.talents.find(a => a.level === firstUltLevel);
+          const matchingLevel10Build = hotsDogBuilds.find(a => a.find(b => b.indexOf(level10.name) >= 0));
+          if (matchingLevel10Build) {
+            const level20TalentName = matchingLevel10Build[levelIndexMap[20]];
+            hotsLogBuild.talents.push({ name: level20TalentName, level: 20 });
+            continue;
+          }
+        }
+      }
+  
+      if (missingTalents.length === 1 && missingTalents[0] === 20){
+        // We didn't have a hots log build to match a level 20 from - let's use best judgement based on what we know about hero talent popularity
+        const chosenLevel10TalentName = hotsLogBuild.talents.find(a => a.level === firstUltLevel).name;
+        const chosenLevel10Talent = await Talent.findOne({
+          Name: chosenLevel10TalentName,
+          HeroId: heroModel.HeroId
+        }).exec();
+
+        const matchingLevel10Talent = await Talent.findOne({HeroId: heroModel.HeroId, Level: 20, AbilityId: chosenLevel10Talent.AbilityId}).exec()
+        let matchingLevel10Popularity = 0;
+        const matchingLevel10Data = level10Popularity.find(a => a.TalentTreeId === matchingLevel10Talent.TalentTreeId);
+        if (matchingLevel10Data && matchingLevel10Data.Total) {
+          matchingLevel10Popularity = matchingLevel10Data.Total;
+        }
+
+        if (matchingLevel10Popularity >= mostPopularLevel20TalentPopularity) {
+          hotsLogBuild.talents.push({ name: matchingLevel10Talent.Name, level: 20 });
+        } else {
+          hotsLogBuild.talents.push({ name: mostPopularLevel20Talent.Name, level: 20 });
+        }
+      }
+    }
+
+  hero.builds = hero.builds.filter(b => b.talents.length === 7);
+  return hero;
 }
 
 function _selectCorrectPatch(currentData, previousData) {
@@ -207,10 +263,10 @@ function _selectCorrectPatch(currentData, previousData) {
   let patch = null;
   let patches = v2PatchData();
   if (newPatch) {
-    // tomorrow > today
+    // Hint for double checking date logic: tomorrow > today
     patch = patches.find(p => new Date(p.liveDate) > twoDaysAgo);
   } else {
-    // yesterday < today
+    // Hint for double checking date logic: yesterday < today
     patch = patches.find(p => new Date(p.liveDate) <= twoDaysAgo);
   }
 
@@ -226,9 +282,8 @@ async function fetch (previousData) {
     '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
   );
   await nightmare.wait(1000);
-  // await nightmare.mouseover('#h1Title > h1');
   await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Arrow');
-  await nightmare.wait(3000);
+  await nightmare.wait(5000);
   const selector =  '#ctl00_MainContent_ComboBoxReplayDateTime_Input';
   const isFilteredCorrect = await nightmare.evaluate( selector => {
       return document.querySelector(selector).getAttribute('value').includes('Current');
@@ -248,13 +303,13 @@ async function fetch (previousData) {
   
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
     let hero = heroesData.heroes[heroIndex];
-    heroIndex++;
     
     if (!hero) {
       continue;
     }
     
     await _getHeroSpecificData(hero);
+    heroIndex++;
   }
   await nightmare.end();
   
