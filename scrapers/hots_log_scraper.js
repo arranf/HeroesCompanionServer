@@ -13,7 +13,6 @@ let axios = require('axios');
 axiosRetry(axios, { retries: 3 });
 
 const isDebug = process.env.NODE_ENV !== 'production';
-let nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
 
 const talentDoesntRequireLevel10Ult = (talent, hero) => (!talent.AbilityId.includes("|R1") && !talent.AbilityId.includes("|R2")) || hero.Name === "Alarak";
 
@@ -106,8 +105,12 @@ async function _getHeroSpecificData (hero) {
   if (isDebug) {
     console.log(`Visiting ${hero.name}`);
   }
+
+  const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
   await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
+  await nightmare.end();
+  
   return _scrapeHeroPage(html)
     .then(async data => {
       Object.assign(hero, data);
@@ -285,7 +288,8 @@ function _selectCorrectPatch(currentData, previousData) {
 }
 
 async function fetch (previousData) {
-  nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
+  console.log('Starting Nightmare')
+  const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
   await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
   await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
   await nightmare.wait(500);
@@ -308,6 +312,7 @@ async function fetch (previousData) {
   }
 
   const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
+  await nightmare.end();
   const heroesData = await _fetchAllHeroWinRates(html);
   
   heroesData.scrapedDate = new Date();
@@ -322,7 +327,6 @@ async function fetch (previousData) {
     await _getHeroSpecificData(hero);
     heroIndex++;
   }
-  await nightmare.halt();
   
   const patch = _selectCorrectPatch(heroesData, previousData);
   
