@@ -109,8 +109,8 @@ async function _getHeroSpecificData (hero) {
   const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
   await nightmare.goto('https://www.hotslogs.com/' + hero.link);
   const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
-  await nightmare.end();
-  
+  await nightmare.end().catch(e => console.error(e));
+
   return _scrapeHeroPage(html)
     .then(async data => {
       Object.assign(hero, data);
@@ -312,7 +312,8 @@ async function fetch (previousData) {
   }
 
   const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
-  await nightmare.end();
+  await nightmare.end().catch(e => console.error(e));
+  
   const heroesData = await _fetchAllHeroWinRates(html);
   
   heroesData.scrapedDate = new Date();
