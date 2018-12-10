@@ -1,1 +1,1 @@
-web: DEBUG=* xvfb-run --server-args="-screen 0 1280x1028x24 -ac +extension GLX +render"
+web: DEBUG=* xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24"
