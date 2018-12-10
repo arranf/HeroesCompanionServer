@@ -1,5 +1,6 @@
 xvfb
 libxss1
+libxrandr-dev
 x11-xkb-utils
 xfonts-100dpi
 xfonts-75dpi

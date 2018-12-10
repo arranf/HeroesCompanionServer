@@ -334,9 +334,8 @@ async function fetch (previousData) {
   heroesData.scrapedDate = new Date();
   
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
-    console.log(`Loop ${i}`)
     let hero = heroesData.heroes[heroIndex];
-    console.log(hero);
+    console.log(hero.name);
     if (!hero) {
       continue;
     }
