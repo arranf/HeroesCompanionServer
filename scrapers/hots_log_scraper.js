@@ -362,9 +362,6 @@ async function fetch (previousData) {
     }
     heroIndex++;
   }
-
-  let numberOfHeroesWithBuilds = heroesData.reduce((total, hero) => hero.builds ? (total + 1) : total , 0)
-  console.log(`Number of Heroes with Builds ${numberOfHeroesWithBuilds}`);
   
   const patch = _selectCorrectPatch(heroesData, previousData);
   
