@@ -313,6 +313,7 @@ async function fetch (previousData) {
   }
 
   const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
+  console.log(html);
   await nightmare.end().catch(e => console.error(e));
   
   const heroesData = await _fetchAllHeroWinRates(html);
@@ -320,8 +321,9 @@ async function fetch (previousData) {
   heroesData.scrapedDate = new Date();
   
   for (let heroIndex = 0; heroIndex < heroesData.heroes.length;) {
+    console.log(`Loop ${i}`)
     let hero = heroesData.heroes[heroIndex];
-    
+    console.log(hero);
     if (!hero) {
       continue;
     }
