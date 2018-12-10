@@ -290,31 +290,44 @@ function _selectCorrectPatch(currentData, previousData) {
 async function fetch (previousData) {
   console.log('Starting Nightmare')
   const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
-  console.log(nightmare);
-  await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
-  await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
-  await nightmare.wait(500);
-  await nightmare.click(
-    '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
-  );
-  await nightmare.wait(1000);
-  await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Arrow');
-  await nightmare.wait(5000);
-  const selector =  '#ctl00_MainContent_ComboBoxReplayDateTime_Input';
-  const isFilteredCorrect = await nightmare.evaluate( selector => {
-      return document.querySelector(selector).getAttribute('value').includes('Current');
-    }, selector
-  );
-
-  if (!isFilteredCorrect) {
-    throw new Error(
-      'Failed to set hotlsogs filters correctly in nightmare'
+  let html = '';
+  try {
+    console.log(nightmare);
+    await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
+    await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
+    await nightmare.wait(500);
+    await nightmare.click(
+      '#ctl00_MainContent_ComboBoxReplayDateTime_DropDown > div > ul > li:nth-child(1) > label'
     );
+    await nightmare.wait(1000);
+    await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Arrow');
+    await nightmare.wait(5000);
+    const selector =  '#ctl00_MainContent_ComboBoxReplayDateTime_Input';
+    const isFilteredCorrect = await nightmare.evaluate( selector => {
+        return document.querySelector(selector).getAttribute('value').includes('Current');
+      }, selector
+    );
+  
+    if (!isFilteredCorrect) {
+      throw new Error(
+        'Failed to set hotlsogs filters correctly in nightmare'
+      );
+    }
+  
+    html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
+    await nightmare.end().catch(e => console.error(e));
+  }
+  catch (e) {
+    console.error('Error running nightmare');
+    console.error(e);
+  }
+  finally {
+    await nightmare.end();
   }
 
-  const html = await nightmare.evaluate( () => document.querySelector('html').innerHTML);
-  console.log(html);
-  await nightmare.end().catch(e => console.error(e));
+  if (html === '') {
+    return;
+  }
   
   const heroesData = await _fetchAllHeroWinRates(html);
   
