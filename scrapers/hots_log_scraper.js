@@ -105,11 +105,26 @@ async function _getHeroSpecificData (hero) {
   if (isDebug) {
     console.log(`Visiting ${hero.name}`);
   }
-
+  
+  let html = '';
   const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
-  await nightmare.goto('https://www.hotslogs.com/' + hero.link);
-  const html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
-  await nightmare.end().catch(e => console.error(e));
+
+  try {
+    await nightmare.goto('https://www.hotslogs.com/' + hero.link);
+    html = await nightmare.evaluate(() => document.querySelector('html').innerHTML);
+    await nightmare.end()
+  }
+  catch (e) {
+   console.error(e);
+  }
+  finally {
+    await nightmare.end();
+  }
+    
+
+  if (!html) {
+    throw Error(`No HTML found for ${hero.name}`);
+  }
 
   return _scrapeHeroPage(html)
     .then(async data => {
@@ -340,9 +355,17 @@ async function fetch (previousData) {
       continue;
     }
     
-    await _getHeroSpecificData(hero);
+    try {
+      await _getHeroSpecificData(hero);
+    }
+    catch (e) {
+      console.error(e);
+    }
     heroIndex++;
   }
+
+  let numberOfHeroesWithBuilds = heroesData.reduce((total, hero) => hero.builds ? (total + 1) : total , 0)
+  console.log(`Number of Heroes with Builds ${numberOfHeroesWithBuilds}`);
   
   const patch = _selectCorrectPatch(heroesData, previousData);
   
