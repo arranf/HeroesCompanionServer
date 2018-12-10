@@ -307,7 +307,6 @@ async function fetch (previousData) {
   const nightmare = new Nightmare({ show: isDebug,  gotoTimeout: 90000 });
   let html = '';
   try {
-    console.log(nightmare);
     await nightmare.goto('https://www.hotslogs.com/Sitewide/HeroAndMapStatistics');
     await nightmare.click('#ctl00_MainContent_ComboBoxReplayDateTime_Input');
     await nightmare.wait(500);
