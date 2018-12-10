@@ -1,4 +1,5 @@
 xvfb
+libxss1
 x11-xkb-utils
 xfonts-100dpi
 xfonts-75dpi
