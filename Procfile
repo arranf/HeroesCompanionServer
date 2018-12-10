@@ -1,1 +1,1 @@
-web: DEBUG=* xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" node index.js
+web: xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" node index.js --color=always
